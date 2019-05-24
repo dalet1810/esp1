@@ -23,7 +23,7 @@
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
-#define TIMER_INTERVAL0_SEC   (1.0) // sample test interval for the first timer
+#define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
@@ -146,7 +146,7 @@ static void example_tg0_timer_init(int timer_idx,
  */
 static void timer_example_evt_task(void *arg)
 {
-
+    int flgpr = 0;
     int flip=0;
     while (1) {
     //for (int i=1; i<5; i++) {
@@ -156,31 +156,33 @@ static void timer_example_evt_task(void *arg)
         //gpio_set_level(BLINK_GPIO, flip);
         //flip ^= 1;
 
+        if(flgpr<5){flgpr++;}else{flgpr=10;}
+
         /* Print information that the timer reported an event */
         if (evt.type == TEST_WITHOUT_RELOAD) {
             flip ^= 1;
             gpio_set_level(BLINK_GPIO, flip);
-            printf("\n    Example timer without reload\n");
+            if(flgpr<6)printf("\n    Example timer without reload\n");
         } else if (evt.type == TEST_WITH_RELOAD) {
-            printf("\n    Example timer with auto reload\n");
+            if(flgpr<6)printf("\n    Example timer with auto reload\n");
         } else {
-            printf("\n    UNKNOWN EVENT TYPE\n");
+            if(flgpr<6)printf("\n    UNKNOWN EVENT TYPE\n");
         }
-        printf("Group[%d], timer[%d] alarm event\n", evt.timer_group, evt.timer_idx);
+        if(flgpr<6)printf("Group[%d], timer[%d] alarm event\n", evt.timer_group, evt.timer_idx);
 
         /* Print the timer values passed by event */
-        printf("------- EVENT TIME -------- flip:%d\n", flip);
-        print_timer_counter(evt.timer_counter_value);
+        if(flgpr<6)printf("------- EVENT TIME -------- flip:%d\n", flip);
+        if(flgpr<6)print_timer_counter(evt.timer_counter_value);
 
         /* Print the timer values as visible by this task */
-        printf("-------- TASK TIME --------\n");
+        if(flgpr<6)printf("-------- TASK TIME --------\n");
         uint64_t task_counter_value;
         timer_get_counter_value(evt.timer_group, evt.timer_idx, &task_counter_value);
-        print_timer_counter(task_counter_value);
+        if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("task delay start...\n");
     //timer_disable_intr(0, 0);
-    vQueueDelete(timer_queue);
+    //vQueueDelete(timer_queue);
 
     for(int v=0; ;v ^= 1) {
         gpio_set_level(BLINK_GPIO, v);
@@ -201,3 +203,4 @@ void app_main()
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
 }
+
