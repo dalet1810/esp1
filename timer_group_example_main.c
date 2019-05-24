@@ -18,12 +18,16 @@
 
 #include "driver/gpio.h"
 
-#define BLINK_GPIO 18
+#define BLINK_GPIO 0
 
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
-#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
-#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
+
+#define TIMER_INTERVAL0_SEC   (1.0) // sample test interval for the first timer
+#define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
+
+//#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
+//#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
 #define TEST_WITHOUT_RELOAD   0        // testing will be done without auto reload
 #define TEST_WITH_RELOAD      1        // testing will be done with auto reload
 
@@ -111,6 +115,9 @@ void IRAM_ATTR timer_group0_isr(void *para)
 static void example_tg0_timer_init(int timer_idx, 
     bool auto_reload, double timer_interval_sec)
 {
+    gpio_pad_select_gpio(BLINK_GPIO);
+    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+
     /* Select and initialize basic parameters of the timer */
     timer_config_t config;
     config.divider = TIMER_DIVIDER;
@@ -139,17 +146,20 @@ static void example_tg0_timer_init(int timer_idx,
  */
 static void timer_example_evt_task(void *arg)
 {
-    //while (1) {
+
     int flip=0;
-    for (int i=0; i<5; i++) {
+    while (1) {
+    //for (int i=1; i<5; i++) {
         timer_event_t evt;
         xQueueReceive(timer_queue, &evt, portMAX_DELAY);
 
-        gpio_set_level(BLINK_GPIO, flip);
-        flip ^= 1;
+        //gpio_set_level(BLINK_GPIO, flip);
+        //flip ^= 1;
 
         /* Print information that the timer reported an event */
         if (evt.type == TEST_WITHOUT_RELOAD) {
+            flip ^= 1;
+            gpio_set_level(BLINK_GPIO, flip);
             printf("\n    Example timer without reload\n");
         } else if (evt.type == TEST_WITH_RELOAD) {
             printf("\n    Example timer with auto reload\n");
@@ -159,7 +169,7 @@ static void timer_example_evt_task(void *arg)
         printf("Group[%d], timer[%d] alarm event\n", evt.timer_group, evt.timer_idx);
 
         /* Print the timer values passed by event */
-        printf("------- EVENT TIME --------\n");
+        printf("------- EVENT TIME -------- flip:%d\n", flip);
         print_timer_counter(evt.timer_counter_value);
 
         /* Print the timer values as visible by this task */
@@ -169,9 +179,12 @@ static void timer_example_evt_task(void *arg)
         print_timer_counter(task_counter_value);
     }
     printf("task delay start...\n");
+    //timer_disable_intr(0, 0);
+    vQueueDelete(timer_queue);
+
     for(int v=0; ;v ^= 1) {
         gpio_set_level(BLINK_GPIO, v);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(TIMER_INTERVAL0_SEC / portTICK_PERIOD_MS);
         //printf("%d\n", v);
     }
 }
@@ -188,4 +201,3 @@ void app_main()
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
 }
-
