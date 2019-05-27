@@ -1,7 +1,5 @@
 /* Timer group-hardware timer example
-
    This example code is in the Public Domain (or CC0 licensed, at your option.)
-
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +21,7 @@
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
-#define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
+#define TIMER_INTERVAL0_SEC   (0.01) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
@@ -41,6 +39,8 @@ typedef struct {
     int timer_idx;
     uint64_t timer_counter_value;
 } timer_event_t;
+
+int flop=0;
 
 xQueueHandle timer_queue;
 
@@ -90,6 +90,10 @@ void IRAM_ATTR timer_group0_isr(void *para)
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
         TIMERG0.hw_timer[timer_idx].alarm_high = (uint32_t) (timer_counter_value >> 32);
         TIMERG0.hw_timer[timer_idx].alarm_low = (uint32_t) timer_counter_value;
+
+        gpio_set_level(BLINK_GPIO, flop);
+        flop ^= 1;
+
     } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
         evt.type = TEST_WITH_RELOAD;
         TIMERG0.int_clr_timers.t1 = 1;
@@ -102,7 +106,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 
     /* Now just send the event data back to the main program task */
-    xQueueSendFromISR(timer_queue, &evt, NULL);
+    if( evt.type != TEST_WITHOUT_RELOAD)
+        xQueueSendFromISR(timer_queue, &evt, NULL);
 }
 
 /*
@@ -160,8 +165,8 @@ static void timer_example_evt_task(void *arg)
 
         /* Print information that the timer reported an event */
         if (evt.type == TEST_WITHOUT_RELOAD) {
-            flip ^= 1;
-            gpio_set_level(BLINK_GPIO, flip);
+            //flip ^= 1;
+            //gpio_set_level(BLINK_GPIO, flip);
             if(flgpr<6)printf("\n    Example timer without reload\n");
         } else if (evt.type == TEST_WITH_RELOAD) {
             if(flgpr<6)printf("\n    Example timer with auto reload\n");
