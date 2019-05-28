@@ -226,8 +226,9 @@ void app_main()
 
 setbuf(stdout, NULL);
     printf("when ready hit enter...");
-    while(getchar() != 'c')
-        ;
+    while(getchar() != 'c') {
+        vTaskDelay(0.1 / portTICK_PERIOD_MS);
+    }
     printf("ready...\n");
     gpio_set_level(17, 1);
 }
