@@ -1,11 +1,9 @@
 /* Timer group-hardware timer example
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#include <stdio.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -13,15 +11,20 @@
 #include "soc/timer_group_struct.h"
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"
-
 #include "driver/gpio.h"
 
-#define BLINK_GPIO 0
+#include "stdio.h"
+
+#define BLINK_GPIO 18
+#define GPIO_INPUT_IO_0     4
+#define GPIO_INPUT_IO_1     5
+#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
+#define ESP_INTR_FLAG_DEFAULT 0
 
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
-#define TIMER_INTERVAL0_SEC   (0.01) // sample test interval for the first timer
+#define TIMER_INTERVAL0_SEC   (0.0001) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
@@ -43,6 +46,9 @@ typedef struct {
 int flop=0;
 
 xQueueHandle timer_queue;
+
+static xQueueHandle gpio_evt_queue = NULL;
+
 
 /*
  * A simple helper function to print the raw timer counter value
@@ -161,7 +167,7 @@ static void timer_example_evt_task(void *arg)
         //gpio_set_level(BLINK_GPIO, flip);
         //flip ^= 1;
 
-        if(flgpr<5){flgpr++;}else{flgpr=10;}
+        if(flgpr<2){flgpr++;}else{flgpr=10;}
 
         /* Print information that the timer reported an event */
         if (evt.type == TEST_WITHOUT_RELOAD) {
@@ -202,10 +208,72 @@ static void timer_example_evt_task(void *arg)
 void app_main()
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
+
+    //input handling
+    void inpin_conf();
+    inpin_conf();
+
     example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
     xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
+
+
+    gpio_pad_select_gpio(17);
+    gpio_set_direction(17, GPIO_MODE_OUTPUT);
+    gpio_set_level(17, 0);
+
+setbuf(stdout, NULL);
+    printf("when ready hit enter...");
+    while(getchar() != 'c')
+        ;
+    printf("ready...\n");
+    gpio_set_level(17, 1);
+}
+
+//input pin with interrupt
+//TaskHandle_t inp_Handle;
+
+static void gpio_task_input(void* arg)
+{
+    uint32_t io_num;
+    for(int i=0; i<10; i++) {
+        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+        }
+    }
+    //vTaskDelete(inp_handle);
+}
+static void IRAM_ATTR gpio_isr_handler(void* arg)
+{
+    uint32_t gpio_num = (uint32_t) arg;
+    xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+}
+void inpin_conf()
+{
+    gpio_config_t io_conf;
+
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+    //bit mask of the pins, use GPIO4/5 here
+    io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;
+    //set as input mode    
+    io_conf.mode = GPIO_MODE_INPUT;
+    //enable pull-up mode
+    io_conf.pull_up_en = 1;
+    gpio_config(&io_conf);
+
+    //change gpio intrrupt type for one pin
+    gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
+
+    //create a queue to handle gpio event from isr
+    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
+    //start gpio task
+    xTaskCreate(gpio_task_input, "gpio_task_input", 2048, NULL, 10, NULL);
+
+    //install gpio isr service
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 }
 
