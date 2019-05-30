@@ -24,7 +24,7 @@
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
-#define TIMER_INTERVAL0_SEC   (0.0001) // sample test interval for the first timer
+#define TIMER_INTERVAL0_SEC   (0.01) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
@@ -159,7 +159,7 @@ static void example_tg0_timer_init(int timer_idx,
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr, 
         (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
-    printf("starting timer %d with interval %f sec\n", timer_idx, timer_interval_sec);
+    //printf("starting timer %d with interval %f sec\n", timer_idx, timer_interval_sec);
 
     timer_start(TIMER_GROUP_0, timer_idx);
 }
@@ -219,6 +219,9 @@ static void timer_example_evt_task(void *arg)
  */
 void app_main()
 {
+
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
 
     //input handling
@@ -237,6 +240,7 @@ void app_main()
     gpio_set_direction(17, GPIO_MODE_OUTPUT);
     gpio_set_level(17, 0);
 
+/*
 setbuf(stdout, NULL);
     printf("when ready hit c...");
     while(getchar() != 'c') {
@@ -244,9 +248,12 @@ setbuf(stdout, NULL);
     }
     printf("ready...\n");
 
+*/
     gpio_set_level(17, 1);
-
-    gpio_task_input();
+    while(1) {
+        gpio_task_input();
+        vTaskDelay(5.0 / portTICK_PERIOD_MS);
+    }
 
 }
 
@@ -263,7 +270,7 @@ void gpio_task_input()
     uint32_t io_num;
     for(int i=0; i<10; i++) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            //printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
             start_timed_pulse(i);
             break;
         }
