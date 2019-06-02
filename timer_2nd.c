@@ -119,8 +119,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 
     /* Now just send the event data back to the main program task */
-    if( evt.type != TEST_WITHOUT_RELOAD)
-        xQueueSendFromISR(timer_queue, &evt, NULL);
+    //if( evt.type != TEST_WITHOUT_RELOAD)
+    //    xQueueSendFromISR(timer_queue, &evt, NULL);
 
     if( tctr > 18 )
         xQueueSendFromISR(timer_queue, &evt, NULL);
@@ -155,7 +155,7 @@ static void example_tg0_timer_init(int timer_idx,
 
     /* Configure the alarm value and the interrupt on alarm. */
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, timer_idx);
+    //timer_enable_intr(TIMER_GROUP_0, timer_idx);
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr, 
         (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
@@ -164,6 +164,16 @@ static void example_tg0_timer_init(int timer_idx,
     timer_start(TIMER_GROUP_0, timer_idx);
 }
 
+void tg0_timer_interrupt(int timer_idx, int strt)
+{
+    if(strt==1) {
+        timer_enable_intr(TIMER_GROUP_0, timer_idx);
+    } else {
+        timer_disable_intr(TIMER_GROUP_0, timer_idx);
+    }
+}
+
+
 /*
  * The main task of this example program
  */
@@ -171,8 +181,8 @@ static void timer_example_evt_task(void *arg)
 {
     //extern int flgpr = 0;
     int flip=0;
-    while (1) {
-    //for (int i=0; i<20; i++) {
+    //while (1) {
+    for (int i=0; i<20; i++) {
         timer_event_t evt;
         xQueueReceive(timer_queue, &evt, portMAX_DELAY);
 
@@ -200,18 +210,22 @@ static void timer_example_evt_task(void *arg)
         if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("timer task done (%d)...\n", tctr);
+    tg1_timer_interrupt(TEST_WITHOUT_RELOADP, 0);
+
     if(tctr>20) {
         tctr = 0;
     }
     //timer_disable_intr(0, 0);
     //vQueueDelete(timer_queue);
 
+/*
     int v=0;
     for(int p=0; p<=20; p++ ) {
         gpio_set_level(BLINK_GPIO, v);
         v ^= 1;
         vTaskDelay(TIMER_INTERVAL0_SEC / portTICK_PERIOD_MS);
     }
+*/
 }
 
 /*
@@ -228,7 +242,7 @@ void app_main()
     void inpin_conf();
     inpin_conf();
 
-    //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
+    example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC); //no interrupt
     if(0)
         example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
     xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
@@ -259,7 +273,8 @@ setbuf(stdout, NULL);
 
 void start_timed_pulse()
 {
-    example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
+    //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
+    tg0_timer_interrupt(TEST_WITHOUT_RELOADP, 1);
 }
 
 //input pin with interrupt
