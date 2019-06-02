@@ -48,6 +48,7 @@ int flop=0;
 int tctr=0;
 
 void gpio_task_input();
+void tg0_timer_interrupt(int, int);
 
 xQueueHandle timer_queue;
 
@@ -210,7 +211,7 @@ static void timer_example_evt_task(void *arg)
         if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("timer task done (%d)...\n", tctr);
-    tg1_timer_interrupt(TEST_WITHOUT_RELOADP, 0);
+    tg1_timer_interrupt(TEST_WITHOUT_RELOAD, 0);
 
     if(tctr>20) {
         tctr = 0;
@@ -274,7 +275,7 @@ setbuf(stdout, NULL);
 void start_timed_pulse()
 {
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
-    tg0_timer_interrupt(TEST_WITHOUT_RELOADP, 1);
+    tg0_timer_interrupt(TEST_WITHOUT_RELOAD, 1);
 }
 
 //input pin with interrupt
