@@ -211,7 +211,7 @@ static void timer_example_evt_task(void *arg)
         if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("timer task done (%d)...\n", tctr);
-    tg1_timer_interrupt(TEST_WITHOUT_RELOAD, 0);
+    tg0_timer_interrupt(TEST_WITHOUT_RELOAD, 0);
 
     if(tctr>20) {
         tctr = 0;
