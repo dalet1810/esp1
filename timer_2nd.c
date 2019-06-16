@@ -137,6 +137,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
 static void example_tg0_timer_init(int timer_idx, 
     bool auto_reload, double timer_interval_sec)
 {
+esp_err_t err_flag;
     gpio_pad_select_gpio(BLINK_GPIO);
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
 
@@ -156,13 +157,16 @@ static void example_tg0_timer_init(int timer_idx,
 
     /* Configure the alarm value and the interrupt on alarm. */
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
-    //timer_enable_intr(TIMER_GROUP_0, timer_idx);
+    //!!timer_enable_intr(TIMER_GROUP_0, timer_idx);
+err_flag = 
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr, 
         (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
+    if(err_flag != ESP_OK)
+        printf("error registering timer isr %d\n", err_flag);
 
     //printf("starting timer %d with interval %f sec\n", timer_idx, timer_interval_sec);
 
-    timer_start(TIMER_GROUP_0, timer_idx);
+    //??timer_start(TIMER_GROUP_0, timer_idx);
 }
 
 void tg0_timer_interrupt(int timer_idx, int strt)
@@ -183,7 +187,7 @@ static void timer_example_evt_task(void *arg)
     //extern int flgpr = 0;
     int flip=0;
     //while (1) {
-    for (int i=0; i<20; i++) {
+    for (int i=0; i<10; i++) {
         timer_event_t evt;
         xQueueReceive(timer_queue, &evt, portMAX_DELAY);
 
@@ -287,7 +291,7 @@ void gpio_task_input()
     for(int i=0; i<10; i++) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             //printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-            start_timed_pulse(i);
+            start_timed_pulse();
             break;
         }
     }
@@ -324,3 +328,4 @@ void inpin_conf()
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 }
+
