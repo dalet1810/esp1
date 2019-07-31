@@ -108,6 +108,7 @@ void app_main()
     //hook isr handler for specific gpio pin again
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
     blink();
+    printf("blink done.\n");
     waitever();
 }
 void blink()
