@@ -41,6 +41,9 @@
 
 #define DELAY_MS	1000
 
+void blink();
+void waitever();
+
 static xQueueHandle gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
@@ -104,13 +107,23 @@ void app_main()
     gpio_isr_handler_remove(GPIO_INPUT_IO_0);
     //hook isr handler for specific gpio pin again
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
-
-    int cnt = 0;
-    while(1) {
+    blink();
+    waitever();
+}
+void blink()
+{
+   int cnt = 0;
+   for(int i=0; i<10; i++) {
         printf("cnt: %d\n", cnt++);
         vTaskDelay(DELAY_MS / portTICK_RATE_MS);
         gpio_set_level(GPIO_OUTPUT_IO_0, cnt % 2);
-        gpio_set_level(GPIO_OUTPUT_IO_1, cnt % 2);
+        //gpio_set_level(GPIO_OUTPUT_IO_1, cnt % 2);
     }
 }
-
+void waitever()
+{
+   while(1)
+   {
+        vTaskDelay(DELAY_MS / portTICK_RATE_MS);      
+   }
+}
