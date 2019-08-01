@@ -40,6 +40,7 @@
 #define ESP_INTR_FLAG_DEFAULT 0
 
 #define DELAY_MS	1000
+#define LONG_DELAY_MS	8000
 
 void blink();
 void waitever();
@@ -54,10 +55,14 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
 
 static void gpio_task_example(void* arg)
 {
+    int callcnt = 0;
     uint32_t io_num;
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+        }
+        if(callcnt++ <= 1) {
+            blink();
         }
     }
 }
@@ -125,6 +130,6 @@ void waitever()
 {
    while(1)
    {
-        vTaskDelay(DELAY_MS / portTICK_RATE_MS);      
+        vTaskDelay(LONG_DELAY_MS / portTICK_RATE_MS);      
    }
 }
