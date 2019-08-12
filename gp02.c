@@ -65,6 +65,7 @@ void app_main()
 {
     printf("GPIO02 test sync speed\n");
     gpio_config_t io_conf;
+    bzero(&io_conf, sizeof(gpio_config_t));
     //disable interrupt
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     //set as output mode
