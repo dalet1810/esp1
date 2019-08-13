@@ -33,19 +33,27 @@
 
 #define DELAY_MS	10
 #define LONG_DELAY_MS	8000
+#define DEBOUNCE	40
 
 void blink();
 void waitever();
 
 static xQueueHandle gpio_evt_queue = NULL;
 
-//volatile uint33_t debounce_ticks = 0;
+volatile uint32_t debounce_ticks = 0;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    //debounce_ticks = xTaskGetTickCount();
-    xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+    uint32_t svticks = 0;
+    svticks = xTaskGetTickCount();
+    if(debounce_ticks == 0) {
+        debounce_ticks = svticks - (DEBOUNCE+30);
+    }
+    if(((svticks - debounce_ticks)) > DEBOUNCE) {
+	debounce_ticks = svticks;
+        xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+    }
 }
 
 static void gpio_task_inp(void* arg)
@@ -79,6 +87,7 @@ void app_main()
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
+    bzero(&io_conf, sizeof(gpio_config_t));
     //interrupt of rising edge
     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
     //bit mask of the pins, use GPIO4/5 here
@@ -87,6 +96,7 @@ void app_main()
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
     io_conf.pull_up_en = 1;
+    io_conf.pull_down_en = 0;
     gpio_config(&io_conf);
 
     //change gpio intrrupt type for one pin
