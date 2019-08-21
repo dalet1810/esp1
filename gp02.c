@@ -90,6 +90,7 @@ void app_main()
     bzero(&io_conf, sizeof(gpio_config_t));
     //interrupt of rising edge
     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+    // or INTR_POSEDGE, INTR_NEGEDGE
     //bit mask of the pins, use GPIO4/5 here
     io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;
     //set as input mode    
