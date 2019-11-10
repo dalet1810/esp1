@@ -63,7 +63,7 @@ static void gpio_task_inp(void* arg)
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             callcnt++;
-            printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
+            //printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
             blink();
         }
     }
@@ -130,10 +130,10 @@ void blink()
    int cnt = 0;
    for(int i=0; i<PULSE_CNT; i++) {
         vTaskDelay(DELAY_MS / portTICK_RATE_MS);
-        gpio_set_level(GPIO_OUTPUT_IO_0, cnt % 2);
+        gpio_set_level(GPIO_OUTPUT_IO_0, (cnt+1) % 2);
         cnt++;
    }
-   printf("blink done, cnt: %d\n", cnt++);
+   //printf("blink done, cnt: %d\n", cnt++);
 }
 
 void waitever()
