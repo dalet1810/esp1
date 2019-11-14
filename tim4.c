@@ -24,7 +24,7 @@
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-#define TIMER_INTERVAL1_SEC   (1.0)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.001)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -50,9 +50,11 @@ xQueueHandle timer_queue;
  */
 static void inline print_timer_counter(uint64_t counter_value)
 {
-    printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
-                                    (uint32_t) (counter_value));
-    printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
+int64_t tt = esp_timer_get_time();
+    //printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
+    //                              (uint32_t) (counter_value));
+    printf("esp time: 0x%08x%08x\n", (uint32_t) (tt >> 32), (uint32_t) (tt));
+    printf("Time    : %.8f s\n", (double) counter_value / TIMER_SCALE);
 }
 
 /*
@@ -147,14 +149,14 @@ static void example_tg0_timer_init(int timer_idx,
 static void timer_example_evt_task(void *arg)
 {
     int flgpr = 0;
-    int flip=0;
+    int flip=1;
     while (1) {
     //for (int i=1; i<5; i++) {
         timer_event_t evt;
         xQueueReceive(timer_queue, &evt, portMAX_DELAY);
 
-        //gpio_set_level(BLINK_GPIO, flip);
-        //flip ^= 1;
+        gpio_set_level(BLINK_GPIO, flip);
+        flip ^= 1;
 
         if(flgpr<5){flgpr++;}else{flgpr=10;}
 
@@ -200,6 +202,7 @@ void app_main()
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
     xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
+    printf("timer scale:%d\n", TIMER_SCALE);
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
 }
