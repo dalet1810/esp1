@@ -175,10 +175,10 @@ static void timer_example_evt_task(void *arg)
         if(flgpr<6)print_timer_counter(evt.timer_counter_value);
 
         /* Print the timer values as visible by this task */
-        if(flgpr<6)printf("-------- TASK TIME --------\n");
+        //if(flgpr<6)printf("-------- TASK TIME --------\n");
         uint64_t task_counter_value;
         timer_get_counter_value(evt.timer_group, evt.timer_idx, &task_counter_value);
-        if(flgpr<6)print_timer_counter(task_counter_value);
+        //if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("task delay start...\n");
     //timer_disable_intr(0, 0);
@@ -197,7 +197,7 @@ static void timer_example_evt_task(void *arg)
 void app_main()
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
-    example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
+    //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
     xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
