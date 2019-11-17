@@ -18,13 +18,13 @@
 
 #include "driver/gpio.h"
 
-#define BLINK_GPIO 0
+#define BLINK_GPIO 18
 
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-#define TIMER_INTERVAL1_SEC   (0.001)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -45,6 +45,7 @@
 
 //void blink();
 void waitever();
+void app_iosup();
 
 static xQueueHandle gpio_evt_queue = NULL;
 
@@ -89,7 +90,7 @@ typedef struct {
     uint64_t timer_counter_value;
 } timer_event_t;
 
-xQueueHandle timer_queue;
+//xQueueHandle timer_queue;
 
 /*
  * A simple helper function to print the raw timer counter value
@@ -114,6 +115,7 @@ int64_t tt = esp_timer_get_time();
  */
 void IRAM_ATTR timer_group0_isr(void *para)
 {
+	static int flip=0;
     int timer_idx = (int) para;
 
     /* Retrieve the interrupt status and the counter value
@@ -151,7 +153,9 @@ void IRAM_ATTR timer_group0_isr(void *para)
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 
     /* Now just send the event data back to the main program task */
-    xQueueSendFromISR(timer_queue, &evt, NULL);
+    //xQueueSendFromISR(timer_queue, &evt, NULL);
+	gpio_set_level(BLINK_GPIO, flip);
+	flip ^= 1;
 }
 
 /*
@@ -190,9 +194,6 @@ static void example_tg0_timer_init(int timer_idx,
     timer_start(TIMER_GROUP_0, timer_idx);
 }
 
-/*
- * The main task of this example program
- */
 static void timer_example_evt_task(void *arg)
 {
     int flgpr = 0;
@@ -200,7 +201,7 @@ static void timer_example_evt_task(void *arg)
     while (1) {
     //for (int i=1; i<5; i++) {
         timer_event_t evt;
-        xQueueReceive(timer_queue, &evt, portMAX_DELAY);
+        //xQueueReceive(timer_queue, &evt, portMAX_DELAY); //queues are TOO slow
 
         gpio_set_level(BLINK_GPIO, flip);
         flip ^= 1;
@@ -232,12 +233,6 @@ static void timer_example_evt_task(void *arg)
     printf("task delay start...\n");
     //timer_disable_intr(0, 0);
     //vQueueDelete(timer_queue);
-
-    for(int v=0; ;v ^= 1) {
-        gpio_set_level(BLINK_GPIO, v);
-        vTaskDelay(TIMER_INTERVAL0_SEC / portTICK_PERIOD_MS);
-        //printf("%d\n", v);
-    }
 }
 
 /*
@@ -246,13 +241,15 @@ static void timer_example_evt_task(void *arg)
 void app_main()
 {
     printf("hwtim - hardware timer test\n");
-    timer_queue = xQueueCreate(10, sizeof(timer_event_t));
+    //timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
-    xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
+    //xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
     printf("timer scale:%d\n", TIMER_SCALE);
     printf("interval0:%f\n", TIMER_INTERVAL0_SEC);
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
+
+    app_iosup();
 }
 //--
 void app_iosup()
