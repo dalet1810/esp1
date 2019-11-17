@@ -245,6 +245,7 @@ static void timer_example_evt_task(void *arg)
  */
 void app_main()
 {
+    printf("hwtim - hardware timer test\n");
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
