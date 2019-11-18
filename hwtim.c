@@ -39,6 +39,7 @@
 #define GPIO_OUTPUT_IO_1    19
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
+#define TMRC_TOP        8
 //--
 #define DELAY_MS	10
 #define LONG_DELAY_MS	8000
@@ -66,6 +67,7 @@ static void gpio_task_inp(void* arg)
             callcnt++;
             printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
             //blink();
+            timer_start(TIMER_GROUP_0, 1); //0?
         }
     }
 }
@@ -115,7 +117,9 @@ int64_t tt = esp_timer_get_time();
  */
 void IRAM_ATTR timer_group0_isr(void *para)
 {
-	static int flip=0;
+    static int flip=1;
+    static int tmrc = 0;
+
     int timer_idx = (int) para;
 
     /* Retrieve the interrupt status and the counter value
@@ -128,24 +132,24 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Prepare basic event data
        that will be then sent back to the main program task */
-    timer_event_t evt;
-    evt.timer_group = 0;
-    evt.timer_idx = timer_idx;
-    evt.timer_counter_value = timer_counter_value;
+    //timer_event_t evt;
+    //evt.timer_group = 0;
+    //evt.timer_idx = timer_idx;
+    //evt.timer_counter_value = timer_counter_value;
 
     /* Clear the interrupt
        and update the alarm time for the timer with without reload */
     if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-        evt.type = TEST_WITHOUT_RELOAD;
+        //evt.type = TEST_WITHOUT_RELOAD;
         TIMERG0.int_clr_timers.t0 = 1;
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
         TIMERG0.hw_timer[timer_idx].alarm_high = (uint32_t) (timer_counter_value >> 32);
         TIMERG0.hw_timer[timer_idx].alarm_low = (uint32_t) timer_counter_value;
     } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
-        evt.type = TEST_WITH_RELOAD;
+        //evt.type = TEST_WITH_RELOAD;
         TIMERG0.int_clr_timers.t1 = 1;
     } else {
-        evt.type = -1; // not supported even type
+        //evt.type = -1; // not supported even type
     }
 
     /* After the alarm has been triggered
@@ -154,8 +158,16 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Now just send the event data back to the main program task */
     //xQueueSendFromISR(timer_queue, &evt, NULL);
-	gpio_set_level(BLINK_GPIO, flip);
-	flip ^= 1;
+    gpio_set_level(BLINK_GPIO, flip);
+    flip ^= 1;
+    if(tmrc++ > TMRC_TOP) {
+        timer_pause(TIMER_GROUP_0, timer_idx);
+        tmrc = 0;
+        if(flip == 0) {
+            gpio_set_level(BLINK_GPIO, 0);
+        }
+    }
+        
 }
 
 /*
@@ -250,6 +262,11 @@ void app_main()
     printf("interval1:%f\n", TIMER_INTERVAL1_SEC);
 
     app_iosup();
+
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+
+    printf("input waiting on GPIO4\n");
 }
 //--
 void app_iosup()
@@ -286,4 +303,5 @@ void app_iosup()
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
     //start gpio task
     xTaskCreate(gpio_task_inp, "gpio_task_inp", 2048, NULL, 10, NULL);
+    printf("input gpio_task_inp running, waiting for %x\n", (unsigned)GPIO_INPUT_PIN_SEL);
 }
