@@ -18,24 +18,26 @@
 
 #include "driver/gpio.h"
 
-#define BLINK_GPIO 18
+//#define BLINK_GPIO 18
+#define BLINK_GPIO 22
 
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+//#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
 #define TEST_WITHOUT_RELOAD   0        // testing will be done without auto reload
 #define TEST_WITH_RELOAD      1        // testing will be done with auto reload
 
-#define GPIO_INPUT_IO_0     4
+#define GPIO_INPUT_IO_0     21
 #define GPIO_INPUT_IO_1     5
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
-#define GPIO_OUTPUT_IO_0    18
+#define GPIO_OUTPUT_IO_0    22
 #define GPIO_OUTPUT_IO_1    19
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
@@ -203,6 +205,12 @@ static void example_tg0_timer_init(int timer_idx,
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr, 
         (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
+/* BLINK for start
+ */
+    gpio_set_level(BLINK_GPIO, 1);
+    vTaskDelay(LONG_DELAY_MS / portTICK_RATE_MS);      
+    gpio_set_level(BLINK_GPIO, 0);
+
     timer_start(TIMER_GROUP_0, timer_idx);
 }
 
@@ -266,7 +274,7 @@ void app_main()
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 
-    printf("input waiting on GPIO4\n");
+    printf("input waiting on GPIO%d\n", GPIO_INPUT_IO_0);
 }
 //--
 void app_iosup()
