@@ -25,8 +25,8 @@
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-//#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
-#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+//#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -67,7 +67,7 @@ static void gpio_task_inp(void* arg)
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             callcnt++;
-            printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
+            //printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
             //blink();
             timer_start(TIMER_GROUP_0, 1); //0?
         }
@@ -305,6 +305,7 @@ void app_iosup()
     gpio_config(&io_conf);
 
     //change gpio intrrupt type for one pin
+    //gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
     gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
 
     //create a queue to handle gpio event from isr
