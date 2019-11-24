@@ -25,7 +25,8 @@
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+//#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -176,6 +177,9 @@ void IRAM_ATTR timer_group0_isr(void *para)
         if(flip == 0) {
             gpio_set_level(BLINK_GPIO, 0);
         }
+	//!!
+        //evt.timer_counter_value = timer_counter_value;
+        //xQueueSendFromISR(gpio_evt_queue, &evt, NULL);
     }
         
 }
@@ -253,8 +257,6 @@ static void timer_example_evt_task(void *arg) //not used
         //if(flgpr<6)print_timer_counter(task_counter_value);
     }
     printf("task delay start...\n");
-    //timer_disable_intr(0, 0);
-    //vQueueDelete(timer_queue);
 }
 
 /*
@@ -262,7 +264,7 @@ static void timer_example_evt_task(void *arg) //not used
  */
 void app_main()
 {
-    printf("hwtim - hardware timer test\n");
+    printf("noqtimer - hardware timer test\n");
     //timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
