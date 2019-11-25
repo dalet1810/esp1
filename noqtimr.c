@@ -25,8 +25,7 @@
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
-//#define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
-#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
+#define TIMER_INTERVAL1_SEC   (0.000025)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -150,18 +149,18 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Clear the interrupt
        and update the alarm time for the timer with without reload */
-    if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
+    /*if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
         //evt.type = TEST_WITHOUT_RELOAD;
         TIMERG0.int_clr_timers.t0 = 1;
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
         TIMERG0.hw_timer[timer_idx].alarm_high = (uint32_t) (timer_counter_value >> 32);
         TIMERG0.hw_timer[timer_idx].alarm_low = (uint32_t) timer_counter_value;
-    } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
+    } else */ if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
         //evt.type = TEST_WITH_RELOAD;
         TIMERG0.int_clr_timers.t1 = 1;
-    } else {
+    } /*else {
         //evt.type = -1; // not supported even type
-    }
+    }*/
 
     /* After the alarm has been triggered
       we need enable it again, so it is triggered the next time */
@@ -316,4 +315,9 @@ void app_iosup()
     //start gpio task
     xTaskCreate(gpio_task_inp, "gpio_task_inp", 2048, NULL, 10, NULL);
     printf("input gpio_task_inp running, waiting for %x\n", (unsigned)GPIO_INPUT_PIN_SEL);
+}
+
+static void dumb_task(void *arg)
+{
+    waitever();
 }
