@@ -38,7 +38,7 @@
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 #define GPIO_OUTPUT_IO_0    22
-#define GPIO_OUTPUT_IO_1    19
+#define GPIO_OUTPUT_IO_1    23
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
 #define TMRC_TOP        79
@@ -131,6 +131,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static int tmrc = 0;
+    static unsigned char rng[] = {0, 15, 29, 44, 58, 61, 68};
+    int r=0;
 
     int timer_idx = (int) para;
 
@@ -151,7 +153,29 @@ void IRAM_ATTR timer_group0_isr(void *para)
     //xQueueSendFromISR(timer_queue, &evt, NULL);
     gpio_set_level(BLINK_GPIO, flip);
     flip ^= 1;
-    if(tmrc++ > TMRC_TOP) {
+    tmrc++;
+    for(r=0; r<sizeof(rng); r++)
+	    if(rng[r] >= tmrc && tmrc < rng[r+1])
+		    break;
+    gpio_set_level(BLONK_GPIO, r & 1);
+/*
+    if(tmrc < 15) {
+        gpio_set_level(BLONK_GPIO, 0);
+    } else if(tmrc >=15 && tmrc < 29) {
+        gpio_set_level(BLONK_GPIO, 1);
+    } else if(tmrc >=29 && tmrc < 44) {
+        gpio_set_level(BLONK_GPIO, 0);
+    } else if(tmrc >=44 && tmrc < 58) {
+        gpio_set_level(BLONK_GPIO, 1);
+    } else if(tmrc >=58 && tmrc < 61) {
+        gpio_set_level(BLONK_GPIO, 0);
+    } else if(tmrc >=61 && tmrc < 68) {
+        gpio_set_level(BLONK_GPIO, 1);
+    } else {
+        gpio_set_level(BLONK_GPIO, 0);
+    }
+*/
+    if(tmrc > TMRC_TOP) {
         timer_pause(TIMER_GROUP_0, timer_idx);
         tmrc = 0;
         if(flip == 0) {
