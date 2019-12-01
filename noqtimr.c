@@ -132,6 +132,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
     static int flip=0;
     static int tmrc = 0;
     static unsigned char rng[] = {0, 15, 29, 44, 58, 61, 68};
+    static int sig = 0;
+    static int ax = 0;
     int r=0;
 
     int timer_idx = (int) para;
@@ -159,6 +161,18 @@ void IRAM_ATTR timer_group0_isr(void *para)
 		    break;
     gpio_set_level(BLONK_GPIO, r & 1);
 /*
+for i in range(69):
+...   if i>=rng[ax]:
+...     print 'sig:', i,'next:',rng[ax+1]
+...     ax = ax+1
+*/
+    if (tmrc >= rng[ax])
+    {
+         gpio_set_level(BLONK_GPIO, sig & 1);
+         ax += 1;
+         sig ^= 1;
+    }
+/*
     if(tmrc < 15) {
         gpio_set_level(BLONK_GPIO, 0);
     } else if(tmrc >=15 && tmrc < 29) {
@@ -177,10 +191,12 @@ void IRAM_ATTR timer_group0_isr(void *para)
 */
     if(tmrc > TMRC_TOP) {
         timer_pause(TIMER_GROUP_0, timer_idx);
-        tmrc = 0;
+        tmrc = 1;
         if(flip == 0) {
             gpio_set_level(BLINK_GPIO, 0);
         }
+        gpio_set_level(BLONK_GPIO, 0);
+        ax = 0;
     }
         
 }
