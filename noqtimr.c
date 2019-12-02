@@ -27,6 +27,7 @@
 
 #define TIMER_INTERVAL0_SEC   (0.1) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (0.0001)   // sample test interval for the second timer
+//#define TIMER_INTERVAL1_SEC   (0.1)   // sample test interval for the second timer
 
 //#define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 //#define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
@@ -131,7 +132,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static int tmrc = 0;
-    static unsigned char rng[] = {0, 15, 29, 44, 58, 61, 68};
+    //static unsigned char rng[] = {0, 15, 29, 44, 58, 61, 68};
+    static unsigned char rng[] = {0, 10, 25, 49, 51, 61, 68};
     static int sig = 0;
     static int ax = 0;
     int r=0;
@@ -156,10 +158,13 @@ void IRAM_ATTR timer_group0_isr(void *para)
     gpio_set_level(BLINK_GPIO, flip);
     flip ^= 1;
     tmrc++;
+/*
     for(r=0; r<sizeof(rng); r++)
 	    if(rng[r] >= tmrc && tmrc < rng[r+1])
 		    break;
     gpio_set_level(BLONK_GPIO, r & 1);
+*/
+
 /*
 for i in range(69):
 ...   if i>=rng[ax]:
@@ -296,6 +301,9 @@ void app_main()
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 
     printf("input waiting on GPIO%llx\n", GPIO_INPUT_PIN_SEL);
+//!
+//    printf("** onetime signal\n");
+//    timer_start(TIMER_GROUP_0, 1); //0?
 }
 //--
 void app_iosup()
