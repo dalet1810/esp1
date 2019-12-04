@@ -61,12 +61,14 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     //debounce_ticks = xTaskGetTickCount();
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
-    gpio_set_level(BLONK_GPIO, 1);
+    gpio_set_level(BLONK_GPIO, 0);
     if(config.counter_en == TIMER_PAUSE) {
         gpio_set_level(BLINK_GPIO, 1);
        	timer_start(TIMER_GROUP_0, 1); //0?
     }
 }
+
+static unsigned int siginit=0;
 
 static void gpio_task_inp(void* arg)
 {
@@ -78,6 +80,7 @@ static void gpio_task_inp(void* arg)
             callcnt++;
             //printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
             //blink();
+            siginit=0;
             gpio_set_level(BLONK_GPIO, 0);
             timer_start(TIMER_GROUP_0, 1); //0?
         }
@@ -130,19 +133,24 @@ int64_t tt = esp_timer_get_time();
  * If we're okay with the timer irq not being serviced while SPI flash cache is disabled,
  * we can allocate this interrupt without the ESP_INTR_FLAG_IRAM flag and use the normal API.
  */
+
 void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static unsigned int tmrc = 0;
-    //static unsigned char rng[] = { 98, 102};
+    //static unsigned int rng[] = { 98, 102};
+    //static unsigned int rng[] = {0, 10, 25, 49, 51, 61, 68};
     static unsigned int rng[] = { 0, 20, 70, 98 , 102, 130, 159};
-    //static unsigned char rng[] = {0, 10, 25, 49, 51, 61, 68};
     static int sig = 0;
     static int ax = 0;
     //int r=0;
 
     int timer_idx = (int) para;
 
+    if(siginit == 0) {
+        siginit = 1;
+        gpio_set_level(BLONK_GPIO, 0);
+    }
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
     //uint32_t intr_status = TIMERG0.int_st_timers.val;
@@ -303,6 +311,7 @@ void app_main()
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 
     printf("input waiting on GPIO%llx\n", GPIO_INPUT_PIN_SEL);
+
 //!
 //    printf("** onetime signal\n");
 //    timer_start(TIMER_GROUP_0, 1); //0?
@@ -343,6 +352,7 @@ void app_iosup()
     //start gpio task
     xTaskCreate(gpio_task_inp, "gpio_task_inp", 2048, NULL, 10, NULL);
     printf("input gpio_task_inp running, waiting for %x\n", (unsigned)GPIO_INPUT_PIN_SEL);
+    printf("BLONK level %x\n", gpio_get_level( BLONK_GPIO ));
 }
 
 /*
