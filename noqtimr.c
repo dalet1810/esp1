@@ -42,7 +42,7 @@
 #define GPIO_OUTPUT_IO_1    23
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
-#define TMRC_TOP        79
+#define TMRC_TOP        180
 //--
 #define DELAY_MS	10
 #define LONG_DELAY_MS	8000
@@ -57,10 +57,11 @@ static xQueueHandle gpio_evt_queue = NULL;
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     static timer_config_t config;
-    uint32_t gpio_num = (uint32_t) arg;
+    //uint32_t gpio_num = (uint32_t) arg;
     //debounce_ticks = xTaskGetTickCount();
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
+    gpio_set_level(BLONK_GPIO, 1);
     if(config.counter_en == TIMER_PAUSE) {
         gpio_set_level(BLINK_GPIO, 1);
        	timer_start(TIMER_GROUP_0, 1); //0?
@@ -77,6 +78,7 @@ static void gpio_task_inp(void* arg)
             callcnt++;
             //printf("GPIO[%d] intr, val, callcnt: %d, %d\n", io_num, gpio_get_level(io_num), callcnt);
             //blink();
+            gpio_set_level(BLONK_GPIO, 0);
             timer_start(TIMER_GROUP_0, 1); //0?
         }
     }
@@ -131,22 +133,23 @@ int64_t tt = esp_timer_get_time();
 void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
-    static int tmrc = 0;
-    //static unsigned char rng[] = {0, 15, 29, 44, 58, 61, 68};
-    static unsigned char rng[] = {0, 10, 25, 49, 51, 61, 68};
+    static unsigned int tmrc = 0;
+    //static unsigned char rng[] = { 98, 102};
+    static unsigned int rng[] = { 0, 20, 70, 98 , 102, 130, 159};
+    //static unsigned char rng[] = {0, 10, 25, 49, 51, 61, 68};
     static int sig = 0;
     static int ax = 0;
-    int r=0;
+    //int r=0;
 
     int timer_idx = (int) para;
 
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
-    uint32_t intr_status = TIMERG0.int_st_timers.val;
+    //uint32_t intr_status = TIMERG0.int_st_timers.val;
     TIMERG0.hw_timer[timer_idx].update = 1;
-    uint64_t timer_counter_value = 
-        ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
-        | TIMERG0.hw_timer[timer_idx].cnt_low;
+    //uint64_t timer_counter_value = 
+    //    ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
+    //    | TIMERG0.hw_timer[timer_idx].cnt_low;
 
     TIMERG0.int_clr_timers.t1 = 1;
 
@@ -173,9 +176,11 @@ for i in range(69):
 */
     if (tmrc >= rng[ax])
     {
-         gpio_set_level(BLONK_GPIO, sig & 1);
-         ax += 1;
-         sig ^= 1;
+         gpio_set_level(BLONK_GPIO, sig );
+	 if(ax < (sizeof(rng) / sizeof(int))) {
+             ax += 1;
+             sig ^= 1;
+	 }
     }
 /*
     if(tmrc < 15) {
@@ -197,9 +202,7 @@ for i in range(69):
     if(tmrc > TMRC_TOP) {
         timer_pause(TIMER_GROUP_0, timer_idx);
         tmrc = 1;
-        if(flip == 0) {
-            gpio_set_level(BLINK_GPIO, 0);
-        }
+        gpio_set_level(BLINK_GPIO, 0);
         gpio_set_level(BLONK_GPIO, 0);
         ax = 0;
     }
@@ -242,6 +245,7 @@ static void example_tg0_timer_init(int timer_idx,
     //timer_start(TIMER_GROUP_0, timer_idx); //start only on input gpio
 }
 
+/*
 static void timer_example_evt_task(void *arg) //not used
 {
     int flgpr = 0;
@@ -256,7 +260,6 @@ static void timer_example_evt_task(void *arg) //not used
 
         if(flgpr<5){flgpr++;}else{flgpr=10;}
 
-        /* Print information that the timer reported an event */
         if (evt.type == TEST_WITHOUT_RELOAD) {
             flip ^= 1;
             gpio_set_level(BLINK_GPIO, flip);
@@ -268,11 +271,9 @@ static void timer_example_evt_task(void *arg) //not used
         }
         if(flgpr<6)printf("Group[%d], timer[%d] alarm event\n", evt.timer_group, evt.timer_idx);
 
-        /* Print the timer values passed by event */
         if(flgpr<6)printf("------- EVENT TIME -------- flip:%d\n", flip);
         if(flgpr<6)print_timer_counter(evt.timer_counter_value);
 
-        /* Print the timer values as visible by this task */
         //if(flgpr<6)printf("-------- TASK TIME --------\n");
         uint64_t task_counter_value;
         timer_get_counter_value(evt.timer_group, evt.timer_idx, &task_counter_value);
@@ -280,6 +281,7 @@ static void timer_example_evt_task(void *arg) //not used
     }
     printf("task delay start...\n");
 }
+*/
 
 /*
  * In this example, we will test hardware timer0 and timer1 of timer group0.
@@ -343,7 +345,9 @@ void app_iosup()
     printf("input gpio_task_inp running, waiting for %x\n", (unsigned)GPIO_INPUT_PIN_SEL);
 }
 
+/*
 static void dumb_task(void *arg)
 {
     waitever();
 }
+*/
