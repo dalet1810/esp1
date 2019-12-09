@@ -149,6 +149,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     if(siginit == 0) {
         siginit = 1;
+	sig = 0;
         gpio_set_level(BLONK_GPIO, 0);
     }
     /* Retrieve the interrupt status and the counter value
