@@ -1,10 +1,4 @@
-/* Timer group-hardware timer example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/* Timer group-hardware timer generate sync pulse
 */
 
 #include <stdio.h>
@@ -99,10 +93,6 @@ void waitever()
 }
 //--
 
-/*
- * A sample structure to pass events
- * from the timer interrupt handler to the main program.
- */
 typedef struct {
     int type;  // the type of timer's event
     int timer_group;
@@ -138,9 +128,11 @@ void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static unsigned int tmrc = 0;
-    //static unsigned int rng[] = { 98, 102};
-    //static unsigned int rng[] = {0, 10, 25, 49, 51, 61, 68};
-    static unsigned int rng[] = { 0, 20, 70, 98 , 102, 130, 159};
+    //static unsigned int rng[] = {0, 99, 100};  //mid pulse mark
+    //static unsigned int rng[] = {0, 15, 75, 99, 100}; //pos side pulse
+    //static unsigned int rng[] = {0, 99, 100, 120, 160}; //neg side pulse
+    static unsigned int rng[] = {0, 15, 75, 99, 100, 120, 160}; //both sides pulse
+
     static int sig = 0;
     static int ax = 0;
     //int r=0;
@@ -152,8 +144,6 @@ void IRAM_ATTR timer_group0_isr(void *para)
 	sig = 0;
         gpio_set_level(BLONK_GPIO, 0);
     }
-    /* Retrieve the interrupt status and the counter value
-       from the timer that reported the interrupt */
     //uint32_t intr_status = TIMERG0.int_st_timers.val;
     TIMERG0.hw_timer[timer_idx].update = 1;
     //uint64_t timer_counter_value = 
@@ -162,20 +152,13 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     TIMERG0.int_clr_timers.t1 = 1;
 
-    /* After the alarm has been triggered
-      we need enable it again, so it is triggered the next time */
+      /* we need enable timer alarm again, so it is triggered the next time */
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 
     //xQueueSendFromISR(timer_queue, &evt, NULL);
     gpio_set_level(BLINK_GPIO, flip);
     flip ^= 1;
     tmrc++;
-/*
-    for(r=0; r<sizeof(rng); r++)
-	    if(rng[r] >= tmrc && tmrc < rng[r+1])
-		    break;
-    gpio_set_level(BLONK_GPIO, r & 1);
-*/
 
 /*
 for i in range(69):
@@ -191,27 +174,11 @@ for i in range(69):
              sig ^= 1;
 	 }
     }
-/*
-    if(tmrc < 15) {
-        gpio_set_level(BLONK_GPIO, 0);
-    } else if(tmrc >=15 && tmrc < 29) {
-        gpio_set_level(BLONK_GPIO, 1);
-    } else if(tmrc >=29 && tmrc < 44) {
-        gpio_set_level(BLONK_GPIO, 0);
-    } else if(tmrc >=44 && tmrc < 58) {
-        gpio_set_level(BLONK_GPIO, 1);
-    } else if(tmrc >=58 && tmrc < 61) {
-        gpio_set_level(BLONK_GPIO, 0);
-    } else if(tmrc >=61 && tmrc < 68) {
-        gpio_set_level(BLONK_GPIO, 1);
-    } else {
-        gpio_set_level(BLONK_GPIO, 0);
-    }
-*/
     if(tmrc > TMRC_TOP) {
         timer_pause(TIMER_GROUP_0, timer_idx);
         tmrc = 1;
         gpio_set_level(BLINK_GPIO, 0);
+	sig = 0;
         gpio_set_level(BLONK_GPIO, 0);
         ax = 0;
     }
@@ -241,8 +208,7 @@ static void example_tg0_timer_init(int timer_idx,
     config.auto_reload = auto_reload;
     timer_init(TIMER_GROUP_0, timer_idx, &config);
 
-    /* Timer's counter will initially start from value below.
-       Also, if auto_reload is set, this value will be automatically reload on alarm */
+    /* auto_reload is set, this value will be automatically reload on alarm */
     timer_set_counter_value(TIMER_GROUP_0, timer_idx, 0x00000000ULL);
 
     /* Configure the alarm value and the interrupt on alarm. */
@@ -313,9 +279,6 @@ void app_main()
 
     printf("input waiting on GPIO%llx\n", GPIO_INPUT_PIN_SEL);
 
-//!
-//    printf("** onetime signal\n");
-//    timer_start(TIMER_GROUP_0, 1); //0?
 }
 //--
 void app_iosup()
