@@ -2,6 +2,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -47,6 +48,17 @@ void app_iosup();
 
 static xQueueHandle gpio_evt_queue = NULL;
 
+unsigned int rang1[] = {0, 100, 101, -1};
+unsigned int rang2[] = {0, 15, 75, 100, 101, -1};
+unsigned int rang3[] = {0, 100, 101, 120, 160, -1};
+
+static unsigned int *sigim[] =
+{
+    rang1, rang2, rang3,  (unsigned int *)-1
+}
+;
+
+unsigned int *sigcur;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
@@ -55,6 +67,9 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     //debounce_ticks = xTaskGetTickCount();
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
+
+    sigcur = sigim[1];
+
     gpio_set_level(BLONK_GPIO, 0);
     if(config.counter_en == TIMER_PAUSE) {
         gpio_set_level(BLINK_GPIO, 1);
@@ -115,6 +130,19 @@ int64_t tt = esp_timer_get_time();
     printf("Time    : %.8f s\n", (double) counter_value / TIMER_SCALE);
 }
 
+static char* disp_vec(char *out, int vec[])
+{
+    //char *o = (char *) malloc(70);;
+    //char *o = out;
+    for(int i=0; vec[i] != (unsigned int)-1; i++) {
+	printf("%d:%d,", i, vec[i]);
+        //asprintf(&t, "%d,", vec[i]);
+        //strcat(o, t);
+    }
+    printf("\n");
+    return("\n");
+}
+
 /*
  * Timer group0 ISR handler
  *
@@ -123,15 +151,16 @@ int64_t tt = esp_timer_get_time();
  * If we're okay with the timer irq not being serviced while SPI flash cache is disabled,
  * we can allocate this interrupt without the ESP_INTR_FLAG_IRAM flag and use the normal API.
  */
-
 void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static unsigned int tmrc = 0;
-    //static unsigned int rng[] = {0, 99, 100};  //mid pulse mark
-    //static unsigned int rng[] = {0, 15, 75, 99, 100}; //pos side pulse
-    //static unsigned int rng[] = {0, 99, 100, 120, 160}; //neg side pulse
-    static unsigned int rng[] = {0, 15, 75, 99, 100, 120, 160}; //both sides pulse
+    //static unsigned int rng[] = {0, 100, 101};  //mid pulse mark
+    //static unsigned int rng[] = {0, 15, 75, 100, 101}; //pos side pulse
+    //static unsigned int rng[] = {0, 100, 101, 120, 160}; //neg side pulse
+    //static unsigned int rng[] = {0, 15, 75, 100, 101, 120, 160}; //both sides pulse
+    static unsigned int *rng;
+rng = sigcur;
 
     static int sig = 0;
     static int ax = 0;
@@ -263,7 +292,17 @@ static void timer_example_evt_task(void *arg) //not used
  */
 void app_main()
 {
+    char *o = (char *) malloc(90);;
     printf("noqtimer - hardware timer test\n");
+
+    printf("sigim[0]:");
+    disp_vec(o, (int *)sigim[0]);
+
+    printf("sigim[1]:");
+    disp_vec(o, (int *)sigim[1]);
+
+    printf("sigim[2]:");
+    disp_vec(o, (int *)sigim[2]);
     //timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
@@ -284,6 +323,7 @@ void app_main()
 void app_iosup()
 {
     printf("HWSUP test sync speed\n");
+
     gpio_config_t io_conf;
     //disable interrupt
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
