@@ -48,9 +48,9 @@ void app_iosup();
 
 static xQueueHandle gpio_evt_queue = NULL;
 
-unsigned int rang1[] = {0, 100, 101, -1};
-unsigned int rang2[] = {0, 15, 75, 100, 101, -1};
-unsigned int rang3[] = {0, 100, 101, 120, 160, -1};
+unsigned int rang1[] = {0, 100, 101, 1500, -1};
+unsigned int rang2[] = {0, 15, 75, 100, 101, 500, -1};
+unsigned int rang3[] = {0, 100, 101, 120, 160, 500, -1};
 
 static unsigned int *sigim[] =
 {
@@ -69,6 +69,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     timer_get_config(0, 1, &config);
 
     sigcur = sigim[1];
+    //sigcur = rang1;
 
     gpio_set_level(BLONK_GPIO, 0);
     if(config.counter_en == TIMER_PAUSE) {
@@ -155,7 +156,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
 {
     static int flip=0;
     static unsigned int tmrc = 0;
-    //static unsigned int rng[] = {0, 100, 101};  //mid pulse mark
+    //static unsigned int rng[] = {0, 100, 101, 1500};  //mid pulse mark
     //static unsigned int rng[] = {0, 15, 75, 100, 101}; //pos side pulse
     //static unsigned int rng[] = {0, 100, 101, 120, 160}; //neg side pulse
     //static unsigned int rng[] = {0, 15, 75, 100, 101, 120, 160}; //both sides pulse
@@ -198,7 +199,7 @@ for i in range(69):
     if (tmrc >= rng[ax])
     {
          gpio_set_level(BLONK_GPIO, sig );
-	 if(ax < (sizeof(rng) / sizeof(int))) {
+	 if(rng[ax+1] != (-1)) {
              ax += 1;
              sig ^= 1;
 	 }
