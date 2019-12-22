@@ -48,17 +48,19 @@ void app_iosup();
 
 static xQueueHandle gpio_evt_queue = NULL;
 
-unsigned int rang1[] = {0, 100, 101, 1500, -1};
-unsigned int rang2[] = {0, 15, 75, 100, 101, 500, -1};
-unsigned int rang3[] = {0, 100, 101, 120, 160, 500, -1};
+unsigned int rang1[] = {0, 1500, -1};
+unsigned int rang2[] = {0, 100, 101, 1500, -1};
+unsigned int rang3[] = {0, 15, 75, 100, 101, 500, -1};
+unsigned int rang4[] = {0, 100, 101, 120, 160, 500, -1};
 
 static unsigned int *sigim[] =
 {
-    rang1, rang2, rang3,  (unsigned int *)-1
+    rang1, rang2, rang3, rang4, (unsigned int *)-1
 }
 ;
 
 unsigned int *sigcur;
+unsigned int pulcode = 0;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
@@ -68,7 +70,9 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
 
-    sigcur = sigim[1];
+    sigcur = sigim[pulcode];
+    pulcode = (pulcode +1) % 3;
+
     //sigcur = rang1;
 
     gpio_set_level(BLONK_GPIO, 0);
