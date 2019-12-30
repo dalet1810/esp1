@@ -31,7 +31,7 @@
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 
-#define DELAY_MS	10
+#define DELAY_MS	8
 #define LONG_DELAY_MS	8000
 #define DEBOUNCE	40
 
@@ -67,6 +67,26 @@ static void gpio_task_inp(void* arg)
             blink();
         }
     }
+}
+
+
+void readln(char *bf, int bfmax)
+{
+  int c;
+  char *buf = bf;
+  for(int i=0; i<bfmax; i++) {
+    c = getchar();
+    vTaskDelay(LONG_DELAY_MS / portTICK_RATE_MS);
+    if(c == (-1))
+      continue;
+    printf("getchar=%d\n", c);
+    *buf++ = c;
+    if(c == '\n') {
+      //*buf = 0;
+      break;
+    }
+  }
+  *buf = 0;
 }
 
 void app_main()
@@ -121,6 +141,12 @@ void app_main()
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
     blink();
     printf("init blink done.\n");
+
+/* */
+    char inbuf[40];
+    readln(inbuf, 39);
+    printf("inbuf=%s\n", (char *)inbuf);
+
     waitever();
 }
 
@@ -133,7 +159,7 @@ void blink()
         gpio_set_level(GPIO_OUTPUT_IO_0, (cnt+1) % 2);
         cnt++;
    }
-   //printf("blink done, cnt: %d\n", cnt++);
+   printf("blink done, cnt, rate: %d, %d\n", cnt++, portTICK_RATE_MS);
 }
 
 void waitever()
