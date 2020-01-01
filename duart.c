@@ -13,6 +13,7 @@
 #include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+
 #include <esp_log.h>
 
 #include <esp_task_wdt.h>
@@ -87,6 +88,150 @@ initialize_console(void)
 #endif
 }
 
+#define STORAGE_NAMESPACE "storage"
+
+esp_err_t print_what_saved(void)
+{
+    nvs_handle my_handle;
+    esp_err_t err;
+
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) return err;
+
+    // Read restart counter
+    int32_t restart_counter = 0; // value will default to 0, if not set yet in NVS
+    err = nvs_get_i32(my_handle, "restart_conter", &restart_counter);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    printf("Restart counter = %d\n", restart_counter);
+
+    // Read run time blob
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+    // obtain required memory space to store blob being read from NVS
+    err = nvs_get_blob(my_handle, "run_time", NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    printf("a counter:\n");
+    if (required_size == 0) {
+        printf("Nothing saved yet!\n");
+    } else {
+        uint32_t* run_time = malloc(required_size);
+        err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
+        //for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
+        //    printf("%d: %d\n", i + 1, run_time[i]);
+        //}
+        free(run_time);
+    }
+
+    // Close
+    nvs_close(my_handle);
+    return ESP_OK;
+}
+esp_err_t save_a_counter(int val)
+{
+    nvs_handle nvs1_handle;
+    esp_err_t err;
+
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &nvs1_handle);
+    if (err != ESP_OK) return err;
+
+    // Read
+    int32_t restart_counter = 0; // value will default to 0, if not set yet in NVS
+    err = nvs_get_i32(nvs1_handle, "restart_conter", &restart_counter);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+
+/*
+    // Write
+    restart_counter = val;
+    err = nvs_set_i32(nvs1_handle, "restart_conter", restart_counter);
+    if (err != ESP_OK) return err;
+*/
+ 
+    // Commit written value.
+    // After setting any values, nvs_commit() must be called to ensure changes are written
+    // to flash storage. Implementations may write to storage at other times,
+    // but this is not guaranteed.
+    err = nvs_commit(nvs1_handle);
+    if (err != ESP_OK) return err;
+
+    // Close
+    nvs_close(nvs1_handle);
+    return ESP_OK;
+}
+
+/* Save new blob value in NVS
+   by first reading a table of previously saved values
+   and then adding the new value at the end of the table.
+   Return an error if anything goes wrong
+   during this process.
+ */
+esp_err_t save_a_blob(void)
+{
+    nvs_handle anvs_handle;
+    esp_err_t err;
+
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
+    if (err != ESP_OK) return err;
+
+    // Read the size of memory space required for blob
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+    err = nvs_get_blob(anvs_handle, "run_time", NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+
+    // Read previously saved blob if available
+    uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
+    if (required_size > 0) {
+        err = nvs_get_blob(anvs_handle, "run_time", run_time, &required_size);
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
+    }
+
+    // Write value including previously saved blob if available
+    if(required_size < 200) { //limit size!
+        required_size += sizeof(uint32_t);
+    }
+    run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    err = nvs_set_blob(anvs_handle, "run_time", run_time, required_size);
+    free(run_time);
+
+    if (err != ESP_OK) return err;
+
+    // Commit
+    err = nvs_commit(anvs_handle);
+    if (err != ESP_OK) return err;
+
+    // Close
+    nvs_close(anvs_handle);
+    return ESP_OK;
+}
+
+
+void nvs_starter()
+{
+    esp_err_t err = nvs_flash_init();
+//nvs_flash_erase();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    err = print_what_saved();
+    if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
+
+    err = save_a_counter(210);
+    if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
+}
+
 /*
 static void
 initialize_nvs(void)
@@ -154,8 +299,8 @@ uart_task(void *v)
    prompt = "defi> ";
 #endif //CONFIG_LOG_COLORS
    }
-  //char **AR;
-  //AR = malloc(sizeof(char *) * 10);
+  char **arline;
+  arline = malloc(sizeof(char *) * 10);
  
    while(true) {
        /* Get a line using linenoise.
@@ -171,10 +316,10 @@ uart_task(void *v)
        }
        printf("line:<%s>\n", line);
 
-char *lp = strdup(line);
-int nargs = getArgs(lp, &line, 10);
+int nargs = getArgs(line, arline, 10);
 printf("nargs=%d\n", nargs);
-for(int j=0; j<nargs; j++) { printf("%d:%d\n", j, lp[j]); } 
+printf("arline=%s\n", *arline);
+for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j])); } 
        /* linenoise allocates line buffer on the heap, so need to free it */
        linenoiseFree(line);
    }
@@ -186,7 +331,9 @@ if(v != NULL)
 void
 app_main(void)
 {
+  nvs_starter();
  //initialize_nvs();
+
 #if 0
  char *pv = "";
 
