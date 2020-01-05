@@ -169,7 +169,7 @@ esp_err_t save_a_counter(int val)
    Return an error if anything goes wrong
    during this process.
  */
-esp_err_t save_a_blob(void)
+esp_err_t save_a_blob(char *sv)
 {
     nvs_handle anvs_handle;
     esp_err_t err;
@@ -195,10 +195,13 @@ esp_err_t save_a_blob(void)
 
     // Write value including previously saved blob if available
     if(required_size < 200) { //limit size!
-        required_size += sizeof(uint32_t);
+        //required_size += sizeof(uint32_t);
+        required_size += strlen(sv) + 1;
     }
-    run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
-    err = nvs_set_blob(anvs_handle, "run_time", run_time, required_size);
+    //run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    run_time[required_size / sizeof(uint32_t) - 1] = 34;
+    printf("rqd size:%d\n", required_size);
+    //err = nvs_set_blob(anvs_handle, "run_time", run_time, required_size);
     free(run_time);
 
     if (err != ESP_OK) return err;
@@ -279,9 +282,13 @@ getArgs(char *lp, char **Ar, int nargs)
     return ar - Ar;
 }
 
+#define SVLINEMAX 36
 static void
 uart_task(void *v)
 {
+  int doneflag = 0;
+  char svline[SVLINEMAX] = "@";
+
  initialize_console();
  const char *prompt = LOG_COLOR_I "defi> " LOG_RESET_COLOR;
 
@@ -312,6 +319,13 @@ uart_task(void *v)
        }
        if(strncmp(line, "done", 4) == 0) {
          linenoiseFree(line);
+	 doneflag = 1;
+         break;
+       }
+       if(strncmp(line, "save", 4) == 0) {
+         strncpy(svline, line, SVLINEMAX);
+         linenoiseFree(line);
+	 doneflag = 2;
          break;
        }
        printf("line:<%s>\n", line);
@@ -324,6 +338,10 @@ for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j]
        linenoiseFree(line);
    }
 printf("done!\n");
+if(doneflag == 2) {
+  printf("save.<%s>\n", svline);
+  save_a_blob(svline);
+}
 if(v != NULL)
   vTaskDelete(NULL);
 }
