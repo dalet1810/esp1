@@ -88,6 +88,40 @@ initialize_console(void)
 #endif
 }
 
+int
+getArgs(char *lp, char **Ar, int nargs)
+{
+    char **ar = Ar, *p, q;
+
+    p = lp;
+    while(*p) {
+    if((ar - Ar) == nargs)
+      break;
+    while((*p == ' ') || (*p == '\t'))
+      p++;
+    if(*p == '"' || *p=='\'')
+      q = *p++;
+    else
+      q = 0;
+    *ar++ = p;
+    while(*p) {
+      if(q) {
+     if(*p == q) {
+       *p++ = 0;
+       break;
+     }
+      } else
+    if((*p == ' ') || (*p == '\t')) {
+       *p++ = 0;
+       break;
+     }
+      p++;
+    }
+    }
+    *ar = 0;
+    return ar - Ar;
+}
+
 #define STORAGE_NAMESPACE "storage"
 
 esp_err_t print_what_saved(void)
@@ -123,6 +157,14 @@ esp_err_t print_what_saved(void)
         //for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
         //    printf("%d: %d\n", i + 1, run_time[i]);
         //}
+	printf("read blob rq size %d, run_time[0] %04X\n", required_size, run_time[0]);
+	printf("read blob string <%s>\n", (char *)(run_time+1));
+
+        char **arsplit;
+        arsplit = malloc(sizeof(char *) * 20);
+        int arcnt = getArgs((char *)(run_time+1), arsplit, 20);
+	printf("arcnt %d, 1st <%s>\n", arcnt, arsplit[0]);
+
         free(run_time);
     }
 
@@ -184,7 +226,8 @@ esp_err_t save_a_blob(char *sv)
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
 
     // Read previously saved blob if available
-    uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
+    uint32_t* run_time = malloc(required_size + sizeof(uint32_t) + 50);
+#if 0
     if (required_size > 0) {
         err = nvs_get_blob(anvs_handle, "run_time", run_time, &required_size);
         if (err != ESP_OK) {
@@ -192,16 +235,20 @@ esp_err_t save_a_blob(char *sv)
             return err;
         }
     }
+#endif
 
-    // Write value including previously saved blob if available
+    // Write value including string size 32 bit
     if(required_size < 200) { //limit size!
-        //required_size += sizeof(uint32_t);
+        required_size = sizeof(uint32_t);
         required_size += strlen(sv) + 1;
     }
     //run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
-    run_time[required_size / sizeof(uint32_t) - 1] = 34;
-    printf("rqd size:%d\n", required_size);
-    //err = nvs_set_blob(anvs_handle, "run_time", run_time, required_size);
+    run_time[0] = required_size;
+    strcpy((char *)(run_time+1), sv);
+
+    printf("save rqd size:%d\n", required_size);
+    printf("save string <%s>\n", (char *)(run_time+1));
+    err = nvs_set_blob(anvs_handle, "run_time", run_time, required_size);
     free(run_time);
 
     if (err != ESP_OK) return err;
@@ -248,40 +295,6 @@ initialize_nvs(void)
 }
 */
 
-int
-getArgs(char *lp, char **Ar, int nargs)
-{
-    char **ar = Ar, *p, q;
-
-    p = lp;
-    while(*p) {
-    if((ar - Ar) == nargs)
-      break;
-    while((*p == ' ') || (*p == '\t'))
-      p++;
-    if(*p == '"' || *p=='\'')
-      q = *p++;
-    else
-      q = 0;
-    *ar++ = p;
-    while(*p) {
-      if(q) {
-     if(*p == q) {
-       *p++ = 0;
-       break;
-     }
-      } else
-    if((*p == ' ') || (*p == '\t')) {
-       *p++ = 0;
-       break;
-     }
-      p++;
-    }
-    }
-    *ar = 0;
-    return ar - Ar;
-}
-
 #define SVLINEMAX 36
 static void
 uart_task(void *v)
@@ -323,7 +336,7 @@ uart_task(void *v)
          break;
        }
        if(strncmp(line, "save", 4) == 0) {
-         strncpy(svline, line, SVLINEMAX);
+         strncpy(svline, (char *)(line+5), SVLINEMAX); //"save "
          linenoiseFree(line);
 	 doneflag = 2;
          break;
