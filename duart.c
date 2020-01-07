@@ -206,10 +206,6 @@ esp_err_t save_a_counter(int val)
 }
 
 /* Save new blob value in NVS
-   by first reading a table of previously saved values
-   and then adding the new value at the end of the table.
-   Return an error if anything goes wrong
-   during this process.
  */
 esp_err_t save_a_blob(char *sv)
 {
@@ -220,13 +216,13 @@ esp_err_t save_a_blob(char *sv)
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
     if (err != ESP_OK) return err;
 
-    // Read the size of memory space required for blob
+    // do not read the size of memory space required for blob
     size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-    err = nvs_get_blob(anvs_handle, "run_time", NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    //err = nvs_get_blob(anvs_handle, "run_time", NULL, &required_size);
+    //if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
 
     // Read previously saved blob if available
-    uint32_t* run_time = malloc(required_size + sizeof(uint32_t) + 50);
+    uint32_t* run_time = malloc(sizeof(uint32_t) + 70);
 #if 0
     if (required_size > 0) {
         err = nvs_get_blob(anvs_handle, "run_time", run_time, &required_size);
