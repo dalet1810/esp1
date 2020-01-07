@@ -280,6 +280,9 @@ void nvs_starter()
 
     err = save_a_counter(210);
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
+
+    //err = save_a_blob("A0 123 456");
+    //if (err != ESP_OK) printf("Error (%s) saving blob to NVS!\n", esp_err_to_name(err));
 }
 
 /*
@@ -341,6 +344,10 @@ uart_task(void *v)
 	 doneflag = 2;
          break;
        }
+       if(strncmp(line, "erase", 5) == 0) {
+	 doneflag = 3;
+         break;
+       }
        printf("line:<%s>\n", line);
 
 int nargs = getArgs(line, arline, 10);
@@ -354,6 +361,10 @@ printf("done!\n");
 if(doneflag == 2) {
   printf("save.<%s>\n", svline);
   save_a_blob(svline);
+}
+if(doneflag == 3) {
+  printf("erase.\n");
+  nvs_flash_erase();
 }
 if(v != NULL)
   vTaskDelete(NULL);
