@@ -70,9 +70,7 @@ initialize_console(void)
    ESP_ERROR_CHECK( esp_console_init(&console_config) );
 
    /* Configure linenoise line completion library */
-   /* Enable multiline editing. If not set, long commands will scroll within
-    * single line.
-    */
+   /* Enable multiline editing. If not set, long commands will scroll within single line.  */
    linenoiseSetMultiLine(1);
 
    /* Tell linenoise where to get command completions and hints */
@@ -187,7 +185,7 @@ esp_err_t save_a_counter(int val)
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
 
 /*
-    // Write
+    // Write ?
     restart_counter = val;
     err = nvs_set_i32(nvs1_handle, "restart_conter", restart_counter);
     if (err != ESP_OK) return err;
@@ -258,7 +256,6 @@ esp_err_t save_a_blob(char *sv)
     return ESP_OK;
 }
 
-
 void nvs_starter()
 {
     esp_err_t err = nvs_flash_init();
@@ -280,19 +277,6 @@ void nvs_starter()
     //err = save_a_blob("A0 123 456");
     //if (err != ESP_OK) printf("Error (%s) saving blob to NVS!\n", esp_err_to_name(err));
 }
-
-/*
-static void
-initialize_nvs(void)
-{
-   esp_err_t err = nvs_flash_init();
-   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-       ESP_ERROR_CHECK( nvs_flash_erase() );
-       err = nvs_flash_init();
-   }
-   ESP_ERROR_CHECK(err);
-}
-*/
 
 #define SVLINEMAX 36
 static void
@@ -370,24 +354,7 @@ void
 app_main(void)
 {
   nvs_starter();
- //initialize_nvs();
 
-#if 0
- char *pv = "";
-
-BaseType_t ret;
-ret = xTaskCreate(uart_task, "uart console",
-      4*1024, // usStackDepth */
-      (void *)pv,
-      tskIDLE_PRIORITY, // priority
-      NULL //&pv->xHandle
-  );
-if(ret != pdPASS) {
-  printf("failed to start uart_task!\n");
-}
-#else
     uart_task(NULL);
     printf("realy done!\n");
-#endif
-
 }
