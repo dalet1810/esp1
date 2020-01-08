@@ -279,11 +279,13 @@ void nvs_starter()
 }
 
 #define SVLINEMAX 36
-static void
+void
 uart_task(void *v)
 {
   int doneflag = 0;
   char svline[SVLINEMAX] = "@";
+
+  nvs_starter();
 
  initialize_console();
  const char *prompt = LOG_COLOR_I "defi> " LOG_RESET_COLOR;
@@ -350,6 +352,7 @@ if(v != NULL)
   vTaskDelete(NULL);
 }
 
+/*
 void
 app_main(void)
 {
@@ -358,3 +361,4 @@ app_main(void)
     uart_task(NULL);
     printf("realy done!\n");
 }
+*/
