@@ -170,6 +170,38 @@ esp_err_t print_what_saved(void)
     nvs_close(my_handle);
     return ESP_OK;
 }
+
+esp_err_t get_saved_blob(char *saved, int savemax)
+{
+    nvs_handle my_handle;
+    esp_err_t err;
+
+    saved[0] = (char)0;
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) return err;
+
+    // Read blob
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+
+    err = nvs_get_blob(my_handle, "run_time", NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    if (required_size == 0) {
+        printf("get_saved_blob: nothing saved yet!\n");
+    } else {
+        err = nvs_get_blob(my_handle, "run_time", saved, &required_size);
+        if (err != ESP_OK) {
+            return err;
+        }
+	printf("get_saved_blob rq size %d, saved[0] %04X\n", required_size, saved[0]);
+	printf("get_saved_blob string <%s>\n", (char *)(saved+4));
+    }
+
+    // Close
+    nvs_close(my_handle);
+    return ESP_OK;
+}
+
 esp_err_t save_a_counter(int val)
 {
     nvs_handle nvs1_handle;
@@ -270,7 +302,12 @@ void nvs_starter()
 
     err = print_what_saved();
     if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
-
+/*
+uint32_t* savedvar = malloc(90);
+err = get_saved_blob((char *)savedvar, 86);
+if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
+printf("savedvar:<%s>\n", (char *)(savedvar+1));
+*/
     err = save_a_counter(210);
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
 
