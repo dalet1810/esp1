@@ -256,54 +256,20 @@ static void example_tg0_timer_init(int timer_idx,
     //timer_start(TIMER_GROUP_0, timer_idx); //start only on input gpio
 }
 
-/*
-static void timer_example_evt_task(void *arg) //not used
-{
-    int flgpr = 0;
-    int flip=1;
-    while (1) {
-    //for (int i=1; i<5; i++) {
-        timer_event_t evt;
-        //xQueueReceive(timer_queue, &evt, portMAX_DELAY); //queues are TOO slow
-
-        gpio_set_level(BLINK_GPIO, flip);
-        flip ^= 1;
-
-        if(flgpr<5){flgpr++;}else{flgpr=10;}
-
-        if (evt.type == TEST_WITHOUT_RELOAD) {
-            flip ^= 1;
-            gpio_set_level(BLINK_GPIO, flip);
-            if(flgpr<6)printf("\n    Example timer without reload\n");
-        } else if (evt.type == TEST_WITH_RELOAD) {
-            if(flgpr<6)printf("\n    Example timer with auto reload\n");
-        } else {
-            if(flgpr<6)printf("\n    UNKNOWN EVENT TYPE\n");
-        }
-        if(flgpr<6)printf("Group[%d], timer[%d] alarm event\n", evt.timer_group, evt.timer_idx);
-
-        if(flgpr<6)printf("------- EVENT TIME -------- flip:%d\n", flip);
-        if(flgpr<6)print_timer_counter(evt.timer_counter_value);
-
-        //if(flgpr<6)printf("-------- TASK TIME --------\n");
-        uint64_t task_counter_value;
-        timer_get_counter_value(evt.timer_group, evt.timer_idx, &task_counter_value);
-        //if(flgpr<6)print_timer_counter(task_counter_value);
-    }
-    printf("task delay start...\n");
-}
-*/
 
 /*
- * In this example, we will test hardware timer0 and timer1 of timer group0.
+ * hardware timer0 and timer1 of timer group0.
  */
 void app_main()
 {
     printf("pulser - generate timed pulse\ninternal nvs list\n");
 
     uart_task(NULL);
-
     char *o = (char *) malloc(90);;
+
+esp_err_t err = get_saved_blob((char *)o, 86);
+if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
+printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
 
     printf("sigim[0]:");
     disp_vec(o, (int *)sigim[0]);
