@@ -257,6 +257,18 @@ static void example_tg0_timer_init(int timer_idx,
 }
 
 
+
+void parsevec(char **svec, int *vec, int maxsvec)
+{
+    printf("svec[%d]:", maxsvec);
+    for(int i=0; i<maxsvec; i++) {
+        printf("<%s>,", svec[i]);
+	if(strcmp(svec[i], "-9") == 0)
+	    break;
+    }
+    printf("\n");
+}
+
 /*
  * hardware timer0 and timer1 of timer group0.
  */
@@ -270,9 +282,15 @@ void app_main()
 esp_err_t err = get_saved_blob((char *)o, 86);
 if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
 printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
+char **arsplit;
+arsplit = malloc(sizeof(char *) * 20);
+int argim = getArgs((char *)(o+4), arsplit, 20);
+printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
+  arsplit[0], arsplit[1], arsplit[2]);
 
     printf("sigim[0]:");
     disp_vec(o, (int *)sigim[0]);
+parsevec(arsplit, (int *)sigim[0], 20);
 
     printf("sigim[1]:");
     disp_vec(o, (int *)sigim[1]);
@@ -280,11 +298,6 @@ printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
     printf("sigim[2]:");
     disp_vec(o, (int *)sigim[2]);
 
-char g=0x00;
-for(g=getchar(); g!=0xFF; g=getchar()) {
-  printf("\ng=%c\n", g);
-}
-    
     //timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
