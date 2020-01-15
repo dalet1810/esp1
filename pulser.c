@@ -1,4 +1,4 @@
-/* Timer group-hardware timer generate sync pulse
+/* Hardware timer generate sync pulse
 */
 
 #include <stdio.h>
@@ -54,6 +54,7 @@ unsigned int rang1[] = {0, 1500, -1};
 unsigned int rang2[] = {0, 100, 101, 1500, -1};
 unsigned int rang3[] = {0, 15, 75, 100, 101, 500, -1};
 unsigned int rang4[] = {0, 100, 101, 120, 160, 500, -1};
+unsigned int rang5[] = {0, 100, 101, 120, 160, 500, 501, 502, 503, 504, 505, 506, 507, -1};
 
 static unsigned int *sigim[] =
 {
@@ -260,12 +261,30 @@ static void example_tg0_timer_init(int timer_idx,
 
 void parsevec(char **svec, int *vec, int maxsvec)
 {
+    int vi = 0;
+    int val = 0;
     printf("svec[%d]:", maxsvec);
     for(int i=0; i<maxsvec; i++) {
-        printf("<%s>,", svec[i]);
-	if(strcmp(svec[i], "-9") == 0)
+        printf("[%d]:<%s>^", i, svec[i]);
+	if(strcmp(svec[i], "-9") == 0) {
 	    break;
+	} else if(strcmp(svec[i], "E") == 0) {
+	    break;
+	} else if(strncmp(svec[i], "PM", 2) == 0) {
+	    vi = 0;
+	    continue;
+	} else if(strchr("-0123456789", svec[i][0])!=0) {
+            printf("D<%s>\n", svec[i]);
+            val = atoi(svec[i]);
+            vec[vi++] = val;
+	}
     }
+    printf("\n");
+    vec[vi] = -1;
+
+    printf("vec array: ");
+    for(int i=0; vec[i]>=0; i++)
+        printf("vec[%d]=%d,", i, vec[i]);
     printf("\n");
 }
 
@@ -288,9 +307,14 @@ int argim = getArgs((char *)(o+4), arsplit, 20);
 printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
   arsplit[0], arsplit[1], arsplit[2]);
 
+static unsigned int *sugim[] = {rang5, 0};
+
+parsevec(arsplit, (int *)sugim[0], 20);
+printf("split sugim[0]:");
+disp_vec(o, (int *)sugim[0]);
+
     printf("sigim[0]:");
     disp_vec(o, (int *)sigim[0]);
-parsevec(arsplit, (int *)sigim[0], 20);
 
     printf("sigim[1]:");
     disp_vec(o, (int *)sigim[1]);
