@@ -55,6 +55,7 @@ unsigned int rang2[] = {0, 100, 101, 1500, -1};
 unsigned int rang3[] = {0, 15, 75, 100, 101, 500, -1};
 unsigned int rang4[] = {0, 100, 101, 120, 160, 500, -1};
 unsigned int rang5[] = {0, 100, 101, 120, 160, 500, 501, 502, 503, 504, 505, 506, 507, -1};
+unsigned int rang6[] = {0, 100, 101, 120, 160, 600, 601, 602, 603, 604, 605, 606, 607, -1};
 
 static unsigned int *sigim[] =
 {
@@ -263,15 +264,23 @@ void parsevec(char **svec, int *vec, int maxsvec)
 {
     int vi = 0;
     int val = 0;
+    char g = '9';
+
     printf("svec[%d]:", maxsvec);
     for(int i=0; i<maxsvec; i++) {
         printf("[%d]:<%s>^", i, svec[i]);
-	if(strcmp(svec[i], "-9") == 0) {
+
+	if(strcmp(svec[i], "-1") == 0) {
+	    printf("  grp end %c:-1\n", g);
+	    continue;
+	} else if(strcmp(svec[i], "-9") == 0) {
 	    break;
 	} else if(strcmp(svec[i], "E") == 0) {
 	    break;
 	} else if(strncmp(svec[i], "PM", 2) == 0) {
 	    vi = 0;
+	    g = svec[i][2];
+            printf("  grp g=<%c>\n", g);
 	    continue;
 	} else if(strchr("-0123456789", svec[i][0])!=0) {
             printf("D<%s>\n", svec[i]);
@@ -296,18 +305,22 @@ void app_main()
     printf("pulser - generate timed pulse\ninternal nvs list\n");
 
     uart_task(NULL);
-    char *o = (char *) malloc(90);;
+    char *o = (char *) malloc(90);
 
 esp_err_t err = get_saved_blob((char *)o, 86);
 if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
 printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
+
 char **arsplit;
 arsplit = malloc(sizeof(char *) * 20);
 int argim = getArgs((char *)(o+4), arsplit, 20);
 printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
   arsplit[0], arsplit[1], arsplit[2]);
 
-static unsigned int *sugim[] = {rang5, 0};
+unsigned int *sug0 = malloc(sizeof(char *) * 50);
+static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0};
+sugim[2] = sug0;
+sugim[3] = (unsigned int *) malloc(sizeof(char *) * 20);
 
 parsevec(arsplit, (int *)sugim[0], 20);
 printf("split sugim[0]:");
