@@ -258,8 +258,6 @@ static void example_tg0_timer_init(int timer_idx,
     //timer_start(TIMER_GROUP_0, timer_idx); //start only on input gpio
 }
 
-
-
 void parsevec(char **svec, int *vec, int maxsvec)
 {
     int vi = 0;
@@ -297,28 +295,46 @@ void parsevec(char **svec, int *vec, int maxsvec)
     printf("\n");
 }
 
+void tstnvs()
+{
+    printf("test named NVS\n");
+    char mem[60];
+    esp_err_t err;
+
+    err = get_named_blob(mem, "PM0store", 58);
+    if (err != ESP_OK) { printf("err0=%d\n", err);}
+    printf("read %s:<%s>\n\n", "PM0store", mem);
+    err = save_nm_blob("012345", "PM0store");
+    if (err != ESP_OK) { printf("err1=%d\n", err);}
+    err = get_named_blob(mem, "PM0store", 58);
+    if (err != ESP_OK) { printf("err1=%d\n", err);}
+    printf("2nd read %s:<%s>\n\n", "PM0store", mem);
+
+}
+
 /*
  * hardware timer0 and timer1 of timer group0.
  */
 void app_main()
 {
-    printf("pulser - generate timed pulse\ninternal nvs list\n");
+	printf("pulser - generate timed pulse\ninternal nvs list\n");
+	tstnvs();
 
-    uart_task(NULL);
-    char *o = (char *) malloc(90);
+	uart_task(NULL);
+	char *o = (char *) malloc(90);
 
-esp_err_t err = get_saved_blob((char *)o, 86);
-if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
-printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
+	esp_err_t err = get_saved_blob((char *)o, 86);
+	if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
+	printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
 
-char **arsplit;
-arsplit = malloc(sizeof(char *) * 20);
-int argim = getArgs((char *)(o+4), arsplit, 20);
-printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
-  arsplit[0], arsplit[1], arsplit[2]);
+	char **arsplit;
+	arsplit = malloc(sizeof(char *) * 20);
+	int argim = getArgs((char *)(o+4), arsplit, 20);
+	printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
+			arsplit[0], arsplit[1], arsplit[2]);
 
-unsigned int *sug0 = malloc(sizeof(char *) * 50);
-static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0};
+	unsigned int *sug0 = malloc(sizeof(char *) * 50);
+	static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0};
 sugim[2] = sug0;
 sugim[3] = (unsigned int *) malloc(sizeof(char *) * 20);
 
