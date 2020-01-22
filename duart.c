@@ -295,9 +295,13 @@ esp_err_t save_nm_blob(char *sv, char *nv_name)
     nvs_handle anvs_handle;
     esp_err_t err;
 
+    err = nvs_flash_init();
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        printf("save_nm_blob open err:%d\n", err);
+	return err;
+    }
 
     size_t required_size = 0;  // value will default to 0, if not set yet in NVS
 
@@ -310,11 +314,11 @@ esp_err_t save_nm_blob(char *sv, char *nv_name)
         required_size += strlen(sv) + 1;
     }
     run_time[0] = required_size;
-    strcpy((char *)(run_time+1), sv);
+    strcpy((char *)(run_time+4), sv);
 
-    printf("save rqd size:%d\n", required_size);
-    printf("save nv_name:%s\n", nv_name);
-    printf("save string <%s>\n", (char *)(run_time+1));
+    printf("save_nm_blob rqd size:%d\n", required_size);
+    printf("save_nm_blob nv_name:%s\n", nv_name);
+    printf("save_nm_blob string<%s>\n", (char *)(run_time+4));
     err = nvs_set_blob(anvs_handle, nv_name, run_time, required_size);
     free(run_time);
 
@@ -334,6 +338,7 @@ esp_err_t get_named_blob(char *saved, char *svname, int savemax)
     nvs_handle my_handle;
     esp_err_t err;
 
+    err = nvs_flash_init();
     saved[0] = (char)0;
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
@@ -352,7 +357,8 @@ esp_err_t get_named_blob(char *saved, char *svname, int savemax)
             return err;
         }
 	printf("get_named_blob rq size %d, saved[0] %04X\n", required_size, saved[0]);
-	printf("get_named_blob (%s) string <%s>\n", svname, (char *)(saved+4));
+	printf("get_named_blob (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
+	printf("get_named_blob (%s) string <%s>\n", svname, (char *)(&saved[4]));
     }
 
     // Close
