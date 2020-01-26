@@ -301,10 +301,10 @@ void tstnvs()
     char mem[60];
     esp_err_t err;
 
-    err = get_named_blob(mem, "PM0store", 58);
+    err = get_named_str(mem, "PM0store", 58);
     if (err != ESP_OK) { printf("get_named err0=%d\n", err);}
-    printf("read %s:<%s>\n\n", "PM0store", mem+4);
-    err = save_nm_blob("0123456", "PM0store");
+    printf("read %s:<%s>\n\n", "PM0store", mem+8);
+    err = save_nm_str("0123456", "PM0store");
     if (err != ESP_OK) { printf("save_nm err1=%d\n", err);}
 /*   
     err = get_named_blob(mem, "PM0store", 58);
