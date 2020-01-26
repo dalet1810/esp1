@@ -366,6 +366,86 @@ esp_err_t get_named_blob(char *saved, char *svname, int savemax)
     return ESP_OK;
 }
 
+/*---*/
+esp_err_t save_nm_str(char *sv, char *nv_name)
+{
+    nvs_handle anvs_handle;
+    esp_err_t err;
+
+    err = nvs_flash_init();
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
+ESP_ERROR_CHECK(err);
+    if (err != ESP_OK) {
+        printf("save_nm_str open err:%d\n", err);
+	return err;
+    }
+
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+
+    // Read previously saved str if available
+    uint32_t* run_time = malloc(sizeof(uint32_t) + 70);
+
+    // Write value including string size 32 bit
+    if(required_size < 200) { //limit size!
+        required_size = sizeof(uint32_t);
+        required_size += strlen(sv) + 1;
+    }
+    run_time[0] = required_size;
+    strcpy((char *)(run_time+4), sv);
+
+    printf("save_nm_str rqd size:%d\n", required_size);
+    printf("save_nm_str nv_name:%s\n", nv_name);
+    printf("save_nm_str string<%s>\n", (char *)(run_time+4));
+    err = nvs_set_str(anvs_handle, nv_name, (char *)run_time);
+    free(run_time);
+
+    if (err != ESP_OK) return err;
+
+    // Commit
+    err = nvs_commit(anvs_handle);
+    if (err != ESP_OK) return err;
+
+    // Close
+    nvs_close(anvs_handle);
+    return ESP_OK;
+}
+
+esp_err_t get_named_str(char *saved, char *svname, int savemax)
+{
+    nvs_handle my_handle;
+    esp_err_t err;
+
+    err = nvs_flash_init(); //nvs_starter?
+    saved[0] = (char)0;
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) return err;
+
+    // Read blob
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+
+    err = nvs_get_str(my_handle, svname, NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    if (required_size == 0) {
+        printf("get_named_str (%s): nothing saved yet!\n", svname);
+    } else {
+        printf("get_named_str rqd size %d only\n", required_size);
+        err = nvs_get_str(my_handle, svname, saved, &required_size);
+        if (err != ESP_OK) {
+            return err;
+        }
+	printf("get_named_str rq size %d, saved[0] %04X\n", required_size, saved[0]);
+	printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
+	printf("get_named_str (%s) string <%s>\n", svname, (char *)(&saved[4]));
+    }
+
+    // Close
+    nvs_close(my_handle);
+    return ESP_OK;
+}
+
+/*---*/
 void nvs_starter()
 {
     esp_err_t err = nvs_flash_init();
