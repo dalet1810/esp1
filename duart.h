@@ -8,3 +8,5 @@ esp_err_t get_named_blob(char *, char *, int);
 
 esp_err_t save_nm_str(char *, char *);
 esp_err_t get_named_str(char *, char *, int);
+
+void nvs_starter();
