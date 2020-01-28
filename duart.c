@@ -1,3 +1,4 @@
+// make ESPBAUD=921600 ESPPORT=/dev/ttyUx
 
 #include <stdio.h>
 #include <string.h>
@@ -454,16 +455,18 @@ void nvs_starter()
     }
     ESP_ERROR_CHECK( err );
 
+/*
     err = print_what_saved();
     if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
-/*
+
 uint32_t* savedvar = malloc(90);
 err = get_saved_blob((char *)savedvar, 86);
 if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
 printf("savedvar:<%s>\n", (char *)(savedvar+1));
-*/
+
     err = save_a_counter(210);
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
+*/
 
     //err = save_a_blob("A0 123 456");
     //if (err != ESP_OK) printf("Error (%s) saving blob to NVS!\n", esp_err_to_name(err));
@@ -533,14 +536,15 @@ for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j]
 printf("done!\n");
 if(doneflag == 2) {
   printf("save.<%s>\n", svline);
-  save_a_blob(svline);
+  //save_a_blob(svline);
+  save_nm_str(svline, "pm0");
 }
 if(doneflag == 3) {
   printf("erase.\n");
   nvs_flash_erase();
 }
-if(v != NULL)
-  vTaskDelete(NULL);
+    if(v != NULL)
+        vTaskDelete(NULL);
 }
 
 /*
