@@ -1,4 +1,5 @@
 /* Hardware timer generate sync pulse
+ * Params in NVS
 */
 
 #include <stdio.h>
@@ -301,18 +302,18 @@ void tstnvs()
     char mem[60];
     esp_err_t err;
 
-    err = get_named_str(mem, "PM0store", 58);
+    err = get_named_str(mem, "pm0", 58);
     if (err != ESP_OK) { printf("get_named err0=%d\n", err);}
-    printf("read %s:<%s>\n\n", "PM0store", mem);
+    printf("read %s:<%s>\n\n", "pm0", mem);
  
     char *xstr = "0123456 789 E";
-    err = save_nm_str(xstr, "PM0store");
-    printf("save str %s:<%s>\n\n", "PM0store", xstr);
+    err = save_nm_str(xstr, "pm0");
+    printf("save str %s:<%s>\n\n", "pm0", xstr);
     if (err != ESP_OK) { printf("save_nm err1=%d\n", err);}
    
-    err = get_named_blob(mem, "PM0store", 58);
+    err = get_named_str(mem, "pm0", 58);
     if (err != ESP_OK) { printf("get_named 2nd err1=%d\n", err);}
-    printf("2nd read %s:<%s>\n---\n", "PM0store", mem);
+    printf("2nd read %s:<%s>\n---\n", "pm0", mem);
 
 }
 
@@ -323,12 +324,12 @@ void app_main()
 {
 	printf("pulser - generate timed pulse\ninternal nvs list\n");
 	nvs_starter();
-	tstnvs();
+	//tstnvs();
 
 	uart_task(NULL);
 	char *o = (char *) malloc(90);
 
-	esp_err_t err = get_named_str((char *)o, "PM0store", 86);
+	esp_err_t err = get_named_str((char *)o, "pm0", 86);
 	if (err != ESP_OK) printf("Error (%s) get_named_str\n", esp_err_to_name(err));
 	printf("get_named_str in pulser:<%s>\n", (char *)(o));
 
