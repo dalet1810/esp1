@@ -1,4 +1,3 @@
-// make ESPBAUD=921600 ESPPORT=/dev/ttyUx
 
 #include <stdio.h>
 #include <string.h>
@@ -295,7 +294,7 @@ esp_err_t save_nm_blob(char *sv, char *nv_name)
     nvs_handle anvs_handle;
     esp_err_t err;
 
-    err = nvs_flash_init();
+    //err = nvs_flash_init();  //nvs_starter in caller?
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
     if (err != ESP_OK) {
@@ -338,7 +337,7 @@ esp_err_t get_named_blob(char *saved, char *svname, int savemax)
     nvs_handle my_handle;
     esp_err_t err;
 
-    err = nvs_flash_init();
+    //err = nvs_flash_init(); //nvs_starter in caller?
     saved[0] = (char)0;
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
@@ -372,7 +371,7 @@ esp_err_t save_nm_str(char *sv, char *nv_name)
     nvs_handle anvs_handle;
     esp_err_t err;
 
-    err = nvs_flash_init();
+    //err = nvs_flash_init();  //nvs_starter in caller?
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
 ESP_ERROR_CHECK(err);
@@ -416,7 +415,7 @@ esp_err_t get_named_str(char *saved, char *svname, int savemax)
     nvs_handle my_handle;
     esp_err_t err;
 
-    err = nvs_flash_init(); //nvs_starter?
+    //err = nvs_flash_init(); //nvs_starter in caller?
     saved[0] = (char)0;
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
     if (err != ESP_OK) return err;
@@ -433,7 +432,6 @@ esp_err_t get_named_str(char *saved, char *svname, int savemax)
         if (err != ESP_OK) {
             return err;
         }
-	printf("get_named_str rq size %d, saved[0] %04X\n", required_size, saved[0]);
 	printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
 	printf("get_named_str (%s) string <%s>\n", svname, (char *)(saved));
     }
