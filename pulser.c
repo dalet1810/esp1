@@ -297,20 +297,23 @@ void parsevec(char **svec, int *vec, int maxsvec)
 
 void tstnvs()
 {
-    printf("test named NVS\n");
+    printf("--- test named NVS\n");
     char mem[60];
     esp_err_t err;
 
     err = get_named_str(mem, "PM0store", 58);
     if (err != ESP_OK) { printf("get_named err0=%d\n", err);}
-    printf("read %s:<%s>\n\n", "PM0store", mem+8);
-    err = save_nm_str("0123456", "PM0store");
+    printf("read %s:<%s>\n\n", "PM0store", mem);
+ 
+    char *xstr = "0123456 789 E";
+    err = save_nm_str(xstr, "PM0store");
+    printf("save str %s:<%s>\n\n", "PM0store", xstr);
     if (err != ESP_OK) { printf("save_nm err1=%d\n", err);}
-/*   
+   
     err = get_named_blob(mem, "PM0store", 58);
     if (err != ESP_OK) { printf("get_named 2nd err1=%d\n", err);}
-    printf("2nd read %s:<%s>\n\n", "PM0store", mem);
-*/
+    printf("2nd read %s:<%s>\n---\n", "PM0store", mem);
+
 }
 
 /*
@@ -319,20 +322,22 @@ void tstnvs()
 void app_main()
 {
 	printf("pulser - generate timed pulse\ninternal nvs list\n");
+	nvs_starter();
 	tstnvs();
 
 	uart_task(NULL);
 	char *o = (char *) malloc(90);
 
-	esp_err_t err = get_saved_blob((char *)o, 86);
-	if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
-	printf("get_saved_blob in pulser:<%s>\n", (char *)(o+4));
+	esp_err_t err = get_named_str((char *)o, "PM0store", 86);
+	if (err != ESP_OK) printf("Error (%s) get_named_str\n", esp_err_to_name(err));
+	printf("get_named_str in pulser:<%s>\n", (char *)(o));
 
 	char **arsplit;
 	arsplit = malloc(sizeof(char *) * 20);
-	int argim = getArgs((char *)(o+4), arsplit, 20);
-	printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
-			arsplit[0], arsplit[1], arsplit[2]);
+	int argim = getArgs((char *)(o), arsplit, 20);
+	printf("argim=%d;\n---\n", argim);
+	//printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
+	//		arsplit[0], arsplit[1], arsplit[2]);
 
 	unsigned int *sug0 = malloc(sizeof(char *) * 50);
 	static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0};
