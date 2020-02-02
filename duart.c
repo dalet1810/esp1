@@ -365,6 +365,7 @@ uart_task(void *v)
 {
   int doneflag = 0;
   char svline[SVLINEMAX] = "@";
+  char sv2[SVLINEMAX] =    "#";
 
  initialize_console();
  const char *prompt = LOG_COLOR_I "defi> " LOG_RESET_COLOR;
@@ -383,6 +384,7 @@ uart_task(void *v)
    prompt = "defi> ";
 #endif //CONFIG_LOG_COLORS
    }
+  int nargs = 0;
   char **arline;
   arline = malloc(sizeof(char *) * 10);
   char *mem = malloc(sizeof(char) * 80);
@@ -410,9 +412,26 @@ uart_task(void *v)
 	 doneflag = 3;
          break;
        }
+       if(strncmp(line, "nsave", 5) == 0) {
+         strncpy(svline, (char *)(line+6), SVLINEMAX); //"nsave "
+         linenoiseFree(line);
+	 doneflag = 4;
+         break;
+       }
+       if(strncmp(line, "reads", 5) == 0) {
+	 doneflag = 5;
+         nargs = getArgs(line, arline, 10);
+
+         if(nargs>1) {
+	   printf("reads:%s\n", arline[1]); 
+	   get_named_str(svline, arline[1], SVLINEMAX);
+	   printf("reads:[%s] <%s>\n", arline[1], svline); 
+         }
+         continue;
+       }
        printf("line:<%s>\n", line);
 
-int nargs = getArgs(line, arline, 10);
+nargs = getArgs(line, arline, 10);
 printf("nargs=%d\n", nargs);
 printf("arline=%s\n", *arline);
 for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j])); } 
@@ -428,6 +447,13 @@ if(doneflag == 2) {
 if(doneflag == 3) {
   printf("erase.\n");
   nvs_flash_erase();
+}
+if(doneflag == 4) {
+  printf("nsave.<%s>\n", svline);
+  strncpy(sv2, svline, SVLINEMAX);
+  nargs = getArgs(svline, arline, 10);
+  printf("nsave nargs %d [%s]:<%s>\n", nargs, arline[0], sv2);
+  save_nm_str(sv2, arline[0]);
 }
 if(doneflag == 1) {
   printf("get str:\n");
