@@ -423,9 +423,14 @@ uart_task(void *v)
          nargs = getArgs(line, arline, 10);
 
          if(nargs>1) {
-	   printf("reads:%s\n", arline[1]); 
-	   get_named_str(svline, arline[1], SVLINEMAX);
-	   printf("reads:[%s] <%s>\n", arline[1], svline); 
+           printf("reads:%s\n", arline[1]);
+           get_named_str(svline, arline[1], SVLINEMAX);
+           printf("reads:[%s] <%s>\n", arline[1], svline);
+
+           nargs = getArgs(svline, arline, 10);
+           printf("reads nargs=%d\n<<", nargs);
+           for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j])); }
+           printf(">>\n");
          }
          continue;
        }
