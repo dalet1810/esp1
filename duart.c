@@ -122,6 +122,87 @@ getArgs(char *lp, char **Ar, int nargs)
 
 #define STORAGE_NAMESPACE "storage"
 
+/*---*/
+esp_err_t save_nm_str(char *sv, char *nv_name)
+{
+    nvs_handle anvs_handle;
+    esp_err_t err;
+
+    err = nvs_flash_init();
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
+ESP_ERROR_CHECK(err);
+    if (err != ESP_OK) {
+        printf("save_nm_str open err:%d\n", err);
+	return err;
+    }
+
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+
+    // Read previously saved str if available
+    uint32_t* run_time = malloc(sizeof(uint32_t) + 70);
+
+    // Write value including string size 32 bit
+    if(required_size < 200) { //limit size!
+        required_size = sizeof(uint32_t);
+        required_size += strlen(sv) + 1;
+    }
+    //run_time[0] = required_size;
+    strcpy((char *)(run_time), sv);
+
+    printf("save_nm_str rqd size:%d\n", required_size);
+    printf("save_nm_str nv_name:%s\n", nv_name);
+    printf("save_nm_str string<%s>\n", (char *)(run_time));
+    err = nvs_set_str(anvs_handle, nv_name, (char *)run_time);
+    free(run_time);
+
+    if (err != ESP_OK) return err;
+
+    // Commit
+    err = nvs_commit(anvs_handle);
+    if (err != ESP_OK) return err;
+
+    // Close
+    nvs_close(anvs_handle);
+    return ESP_OK;
+}
+
+esp_err_t get_named_str(char *saved, char *svname, int savemax)
+{
+    nvs_handle my_handle;
+    esp_err_t err;
+
+    err = nvs_flash_init(); //nvs_starter?
+    saved[0] = (char)0;
+    // Open
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) return err;
+
+    // Read blob
+    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
+
+    err = nvs_get_str(my_handle, svname, NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    if (required_size == 0) {
+        printf("get_named_str (%s): nothing saved yet!\n", svname);
+    } else {
+        printf("get_named_str rqd size %d only\n", required_size);
+        err = nvs_get_str(my_handle, svname, saved, &required_size);
+        if (err != ESP_OK) {
+            return err;
+        }
+	printf("get_named_str rq size %d, saved[0] %04X\n", required_size, saved[0]);
+	printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
+	printf("get_named_str (%s) string <%s>\n", svname, saved);
+    }
+
+    // Close
+    nvs_close(my_handle);
+    return ESP_OK;
+}
+
+/*---*/
+
 esp_err_t print_what_saved(void)
 {
     nvs_handle my_handle;
@@ -170,38 +251,6 @@ esp_err_t print_what_saved(void)
     nvs_close(my_handle);
     return ESP_OK;
 }
-
-esp_err_t get_saved_blob(char *saved, int savemax)
-{
-    nvs_handle my_handle;
-    esp_err_t err;
-
-    saved[0] = (char)0;
-    // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) return err;
-
-    // Read blob
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-
-    err = nvs_get_blob(my_handle, "run_time", NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    if (required_size == 0) {
-        printf("get_saved_blob: nothing saved yet!\n");
-    } else {
-        err = nvs_get_blob(my_handle, "run_time", saved, &required_size);
-        if (err != ESP_OK) {
-            return err;
-        }
-	printf("get_saved_blob rq size %d, saved[0] %04X\n", required_size, saved[0]);
-	printf("get_saved_blob string <%s>\n", (char *)(saved+4));
-    }
-
-    // Close
-    nvs_close(my_handle);
-    return ESP_OK;
-}
-
 esp_err_t save_a_counter(int val)
 {
     nvs_handle nvs1_handle;
@@ -288,161 +337,6 @@ esp_err_t save_a_blob(char *sv)
     return ESP_OK;
 }
 
-/* Save named new blob value in NVS
- */
-esp_err_t save_nm_blob(char *sv, char *nv_name)
-{
-    nvs_handle anvs_handle;
-    esp_err_t err;
-
-    //err = nvs_flash_init();  //nvs_starter in caller?
-    // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
-    if (err != ESP_OK) {
-        printf("save_nm_blob open err:%d\n", err);
-	return err;
-    }
-
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-
-    // Read previously saved blob if available
-    uint32_t* run_time = malloc(sizeof(uint32_t) + 70);
-
-    // Write value including string size 32 bit
-    if(required_size < 200) { //limit size!
-        required_size = sizeof(uint32_t);
-        required_size += strlen(sv) + 1;
-    }
-    run_time[0] = required_size;
-    strcpy((char *)(run_time+4), sv);
-
-    printf("save_nm_blob rqd size:%d\n", required_size);
-    printf("save_nm_blob nv_name:%s\n", nv_name);
-    printf("save_nm_blob string<%s>\n", (char *)(run_time+4));
-    err = nvs_set_blob(anvs_handle, nv_name, run_time, required_size);
-    free(run_time);
-
-    if (err != ESP_OK) return err;
-
-    // Commit
-    err = nvs_commit(anvs_handle);
-    if (err != ESP_OK) return err;
-
-    // Close
-    nvs_close(anvs_handle);
-    return ESP_OK;
-}
-
-esp_err_t get_named_blob(char *saved, char *svname, int savemax)
-{
-    nvs_handle my_handle;
-    esp_err_t err;
-
-    //err = nvs_flash_init(); //nvs_starter in caller?
-    saved[0] = (char)0;
-    // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) return err;
-
-    // Read blob
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-
-    err = nvs_get_blob(my_handle, svname, NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    if (required_size == 0) {
-        printf("get_named_blob (%s): nothing saved yet!\n", svname);
-    } else {
-        err = nvs_get_blob(my_handle, svname, saved, &required_size);
-        if (err != ESP_OK) {
-            return err;
-        }
-	printf("get_named_blob rq size %d, saved[0] %04X\n", required_size, saved[0]);
-	printf("get_named_blob (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
-	printf("get_named_blob (%s) string <%s>\n", svname, (char *)(&saved[4]));
-    }
-
-    // Close
-    nvs_close(my_handle);
-    return ESP_OK;
-}
-
-/*---*/
-esp_err_t save_nm_str(char *sv, char *nv_name)
-{
-    nvs_handle anvs_handle;
-    esp_err_t err;
-
-    //err = nvs_flash_init();  //nvs_starter in caller?
-    // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &anvs_handle);
-ESP_ERROR_CHECK(err);
-    if (err != ESP_OK) {
-        printf("save_nm_str open err:%d\n", err);
-	return err;
-    }
-
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-
-    // Read previously saved str if available
-    uint32_t* run_time = malloc(sizeof(uint32_t) + 70);
-
-    // Write value including string size 32 bit
-    if(required_size < 200) { //limit size!
-        required_size = sizeof(uint32_t);
-        required_size += strlen(sv) + 1;
-    }
-    run_time[0] = required_size;
-    strcpy((char *)run_time, sv);
-
-    printf("save_nm_str rqd size:%d\n", required_size);
-    printf("save_nm_str nv_name:%s\n", nv_name);
-    printf("save_nm_str string<%s>\n", (char *)(run_time));
-    err = nvs_set_str(anvs_handle, nv_name, (char *)run_time);
-    free(run_time);
-
-    if (err != ESP_OK) return err;
-
-    // Commit
-    err = nvs_commit(anvs_handle);
-    if (err != ESP_OK) return err;
-
-    // Close
-    nvs_close(anvs_handle);
-    return ESP_OK;
-}
-
-esp_err_t get_named_str(char *saved, char *svname, int savemax)
-{
-    nvs_handle my_handle;
-    esp_err_t err;
-
-    //err = nvs_flash_init(); //nvs_starter in caller?
-    saved[0] = (char)0;
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) return err;
-
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-
-    err = nvs_get_str(my_handle, svname, NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    if (required_size == 0) {
-        printf("get_named_str (%s): nothing saved yet!\n", svname);
-    } else {
-        printf("get_named_str rqd size %d only\n", required_size);
-        err = nvs_get_str(my_handle, svname, saved, &required_size);
-        if (err != ESP_OK) {
-            return err;
-        }
-	printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
-	printf("get_named_str (%s) string <%s>\n", svname, (char *)(saved));
-    }
-
-    // Close
-    nvs_close(my_handle);
-    return ESP_OK;
-}
-
-/*---*/
 void nvs_starter()
 {
     esp_err_t err = nvs_flash_init();
@@ -455,31 +349,22 @@ void nvs_starter()
     }
     ESP_ERROR_CHECK( err );
 
-/*
     err = print_what_saved();
     if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
 
-uint32_t* savedvar = malloc(90);
-err = get_saved_blob((char *)savedvar, 86);
-if (err != ESP_OK) printf("Error (%s) get_saved_blob\n", esp_err_to_name(err));
-printf("savedvar:<%s>\n", (char *)(savedvar+1));
-
     err = save_a_counter(210);
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
-*/
 
     //err = save_a_blob("A0 123 456");
     //if (err != ESP_OK) printf("Error (%s) saving blob to NVS!\n", esp_err_to_name(err));
 }
 
-#define SVLINEMAX 84
-void
+#define SVLINEMAX 70
+static void
 uart_task(void *v)
 {
   int doneflag = 0;
   char svline[SVLINEMAX] = "@";
-
-  nvs_starter();
 
  initialize_console();
  const char *prompt = LOG_COLOR_I "defi> " LOG_RESET_COLOR;
@@ -500,6 +385,7 @@ uart_task(void *v)
    }
   char **arline;
   arline = malloc(sizeof(char *) * 10);
+  char *mem = malloc(sizeof(char) * 80);
  
    while(true) {
        /* Get a line using linenoise.
@@ -535,19 +421,24 @@ for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j]
    }
 printf("done!\n");
 if(doneflag == 2) {
-  printf("save.<%s>\n", svline);
+  printf("save str <%s> at %s\n", svline, "str0");
+  save_nm_str(svline, "str0");
   //save_a_blob(svline);
-  save_nm_str(svline, "pm0");
 }
 if(doneflag == 3) {
   printf("erase.\n");
   nvs_flash_erase();
 }
-    if(v != NULL)
-        vTaskDelete(NULL);
+if(doneflag == 1) {
+  printf("get str:\n");
+  int err = get_named_str(mem, "str0", 80);
+  ESP_ERROR_CHECK( err );
+  printf("get str %s:%d <%s>\n", "str0", err, mem);
+}
+if(v != NULL)
+  vTaskDelete(NULL);
 }
 
-/*
 void
 app_main(void)
 {
@@ -556,4 +447,3 @@ app_main(void)
     uart_task(NULL);
     printf("realy done!\n");
 }
-*/
