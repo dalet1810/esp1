@@ -360,6 +360,26 @@ void nvs_starter()
 }
 
 #define SVLINEMAX 70
+static void loadnmstr(int *out, char *name, int maxint)
+{
+    char sv2[SVLINEMAX] = "^";
+    int nargs = 0;
+    char **arline;
+    get_named_str(sv2, name, SVLINEMAX);
+    arline = malloc(sizeof(char *) * 10);
+    nargs = getArgs(sv2, arline, 10);
+    printf("loadnmstr nargs=%d {", nargs);
+    for(int j=0; j<nargs; j++) { printf("[%d:%s (%d)] ", j, arline[j], atoi(arline[j])); }
+    printf("}\n");
+    for(int j=0; j<nargs; j++) {
+	if(arline[j][0] == 'E') {
+	    out[j] = -1;
+	    break;
+	}
+        out[j] = atoi(arline[j]);
+    }
+}
+
 static void
 uart_task(void *v)
 {
@@ -390,9 +410,7 @@ uart_task(void *v)
   char *mem = malloc(sizeof(char) * 80);
  
    while(true) {
-       /* Get a line using linenoise.
-        * The line is returned when ENTER is pressed.
-        */
+       /* Get a line using linenoise.  */
        char* line = linenoise(prompt);
        if (line == NULL) { /* Ignore empty lines */
            continue;
@@ -476,5 +494,12 @@ app_main(void)
   nvs_starter();
 
     uart_task(NULL);
+
+    int* pulp = (int *)malloc(sizeof(int *) * 10);
+    loadnmstr(pulp, "pm0", 10);
+    printf("\npulp 1:"); for(int j=0; j<10; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+    loadnmstr(pulp, "pm1", 10);
+    printf("\npulp 2:"); for(int j=0; j<10; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+
     printf("realy done!\n");
 }
