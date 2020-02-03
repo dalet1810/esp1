@@ -495,11 +495,11 @@ app_main(void)
 
     uart_task(NULL);
 
-    int* pulp = (int *)malloc(sizeof(int *) * 10);
-    loadnmstr(pulp, "pm0", 10);
-    printf("\npulp 1:"); for(int j=0; j<10; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
-    loadnmstr(pulp, "pm1", 10);
-    printf("\npulp 2:"); for(int j=0; j<10; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+    int* pulp = (int *)malloc(sizeof(int *) * 20);
+    loadnmstr(pulp, "pm0", 20);
+    printf("\npulp 1:"); for(int j=0; j<20; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+    loadnmstr(pulp, "pm2", 10);
+    printf("\npulp 2:"); for(int j=0; j<20; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
 
     printf("realy done!\n");
 }
