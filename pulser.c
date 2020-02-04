@@ -306,6 +306,7 @@ void tstnvs()
     if (err != ESP_OK) { printf("get_named err0=%d\n", err);}
     printf("read %s:<%s>\n\n", "pm0", mem);
  
+    /*
     char *xstr = "0123456 789 E";
     err = save_nm_str(xstr, "pm0");
     printf("save str %s:<%s>\n\n", "pm0", xstr);
@@ -315,6 +316,14 @@ void tstnvs()
     if (err != ESP_OK) { printf("get_named 2nd err1=%d\n", err);}
     printf("2nd read %s:<%s>\n---\n", "pm0", mem);
 
+    int* pulp = (int *)malloc(sizeof(int *) * 20);
+    loadnmstr(pulp, "pm0", 20);
+    printf("\npulp 1:"); for(int j=0; j<20; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+    printf("\n");
+    loadnmstr(pulp, "pm1", 20);
+    printf("\npulp 2:"); for(int j=0; j<20; j++) { printf("%d:(%d),", j, pulp[j]); if(pulp[j]==(-1))break; } 
+    printf("\n");
+    */
 }
 
 /*
@@ -324,9 +333,10 @@ void app_main()
 {
 	printf("pulser - generate timed pulse\ninternal nvs list\n");
 	nvs_starter();
-	//tstnvs();
+	tstnvs();
 
 	uart_task(NULL);
+//xTaskCreate(uart_task, "uart_task", 2048, NULL, 10, NULL);
 	char *o = (char *) malloc(90);
 
 	esp_err_t err = get_named_str((char *)o, "pm0", 86);
