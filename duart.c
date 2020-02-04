@@ -380,6 +380,8 @@ void loadnmstr(int *out, char *name, int maxint)
     }
 }
 
+char xline[SVLINEMAX];
+
 void
 uart_task(void *v)
 {
@@ -483,6 +485,9 @@ if(doneflag == 1) {
   int err = get_named_str(mem, "pm0", 80);
   ESP_ERROR_CHECK( err );
   printf("get str %s:%d <%s>\n", "pm0", err, mem);
+
+  strncpy(xline, mem, SVLINEMAX); //last pm0
+  printf("xline:<%s>\n", xline);
 }
 if(v != NULL)
   vTaskDelete(NULL);
