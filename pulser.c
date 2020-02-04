@@ -336,7 +336,8 @@ void app_main()
 	tstnvs();
 
 	uart_task(NULL);
-//xTaskCreate(uart_task, "uart_task", 2048, NULL, 10, NULL);
+        printf("after uart xline:<%s>\n", xline);
+
 	char *o = (char *) malloc(90);
 
 	esp_err_t err = get_named_str((char *)o, "pm0", 86);
