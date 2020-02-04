@@ -191,9 +191,9 @@ esp_err_t get_named_str(char *saved, char *svname, int savemax)
         if (err != ESP_OK) {
             return err;
         }
-	printf("get_named_str rq size %d, saved[0] %04X\n", required_size, saved[0]);
-	printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
-	printf("get_named_str (%s) string <%s>\n", svname, saved);
+	//printf("get_named_str rq size %d, saved[0] %04X\n", required_size, saved[0]);
+	//printf("get_named_str (%s) bytes <%x,%x,%x,%x,%x>\n", svname, saved[0], saved[1], saved[2], saved[3], saved[4]);
+	//printf("get_named_str (%s) string <%s>\n", svname, saved);
     }
 
     // Close
@@ -349,18 +349,18 @@ void nvs_starter()
     }
     ESP_ERROR_CHECK( err );
 
-    err = print_what_saved();
-    if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
+    //err = print_what_saved();
+    //if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
 
-    err = save_a_counter(210);
-    if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
+    //err = save_a_counter(210);
+    //if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
 
     //err = save_a_blob("A0 123 456");
     //if (err != ESP_OK) printf("Error (%s) saving blob to NVS!\n", esp_err_to_name(err));
 }
 
 #define SVLINEMAX 70
-static void loadnmstr(int *out, char *name, int maxint)
+void loadnmstr(int *out, char *name, int maxint)
 {
     char sv2[SVLINEMAX] = "^";
     int nargs = 0;
@@ -380,7 +380,7 @@ static void loadnmstr(int *out, char *name, int maxint)
     }
 }
 
-static void
+void
 uart_task(void *v)
 {
   int doneflag = 0;
@@ -447,7 +447,7 @@ uart_task(void *v)
 
            nargs = getArgs(svline, arline, 10);
            printf("reads nargs=%d\n<<", nargs);
-           for(int j=0; j<nargs; j++) { printf("%d:%s (%d)\n", j, arline[j], atoi(arline[j])); }
+           for(int j=0; j<nargs; j++) { printf("%d:%s (%d),", j, arline[j], atoi(arline[j])); }
            printf(">>\n");
          }
          continue;
@@ -480,14 +480,15 @@ if(doneflag == 4) {
 }
 if(doneflag == 1) {
   printf("get str:\n");
-  int err = get_named_str(mem, "str0", 80);
+  int err = get_named_str(mem, "pm0", 80);
   ESP_ERROR_CHECK( err );
-  printf("get str %s:%d <%s>\n", "str0", err, mem);
+  printf("get str %s:%d <%s>\n", "pm0", err, mem);
 }
 if(v != NULL)
   vTaskDelete(NULL);
 }
 
+/*
 void
 app_main(void)
 {
@@ -503,3 +504,4 @@ app_main(void)
 
     printf("realy done!\n");
 }
+*/
