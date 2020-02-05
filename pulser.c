@@ -350,8 +350,9 @@ void app_main()
 	char **arsplit;
 	arsplit = malloc(sizeof(char *) * 20);
 	int argim = getArgs((char *)(o), arsplit, 20);
+printf("get args(%s):%d 1st<%s>\n", xline, argim, arsplit[0]);
 
-        parsevec(arsplit, (int *)o, 20);
+        //parsevec(arsplit, (int *)o, 20);
         loadnmstr(vec2, arsplit[0], 14);
         printf("disp loaded <%s>:", arsplit[0]);
         disp_vec(o, vec2);
