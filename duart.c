@@ -371,12 +371,12 @@ void loadnmstr(int *out, char *name, int maxint)
     printf("loadnmstr nargs=%d {", nargs);
     for(int j=0; j<nargs; j++) { printf("[%d:%s (%d)] ", j, arline[j], atoi(arline[j])); }
     printf("}\n");
-    for(int j=0; j<nargs; j++) {
+    for(int j=1; j<nargs; j++) { //skip 1st (name)
 	if(arline[j][0] == 'E') {
-	    out[j] = -1;
+	    out[j-1] = -1;
 	    break;
 	}
-        out[j] = atoi(arline[j]);
+        out[j-1] = atoi(arline[j]);
     }
 }
 
@@ -446,6 +446,7 @@ uart_task(void *v)
            printf("reads:%s\n", arline[1]);
            get_named_str(svline, arline[1], SVLINEMAX);
            printf("reads:[%s] <%s>\n", arline[1], svline);
+           strncpy(xline, svline, SVLINEMAX); //last reads for export
 
            nargs = getArgs(svline, arline, 10);
            printf("reads nargs=%d\n<<", nargs);
@@ -486,7 +487,7 @@ if(doneflag == 1) {
   ESP_ERROR_CHECK( err );
   printf("get str %s:%d <%s>\n", "pm0", err, mem);
 
-  strncpy(xline, mem, SVLINEMAX); //last pm0
+  //strncpy(xline, mem, SVLINEMAX); //last pm0 on done
   printf("xline:<%s>\n", xline);
 }
 if(v != NULL)
