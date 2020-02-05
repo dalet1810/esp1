@@ -331,6 +331,8 @@ void tstnvs()
  */
 void app_main()
 {
+        int vec2[30];
+
 	printf("pulser - generate timed pulse\ninternal nvs list\n");
 	nvs_starter();
 	tstnvs();
@@ -339,14 +341,22 @@ void app_main()
         printf("after uart xline:<%s>\n", xline);
 
 	char *o = (char *) malloc(90);
+	strncpy(o, xline, 90);
 
-	esp_err_t err = get_named_str((char *)o, "pm0", 86);
-	if (err != ESP_OK) printf("Error (%s) get_named_str\n", esp_err_to_name(err));
-	printf("get_named_str in pulser:<%s>\n", (char *)(o));
+	//esp_err_t err = get_named_str((char *)o, "pm0", 86);
+	//if (err != ESP_OK) printf("Error (%s) get_named_str\n", esp_err_to_name(err));
+	//printf("get_named_str in pulser:<%s>\n", (char *)(o));
 
 	char **arsplit;
 	arsplit = malloc(sizeof(char *) * 20);
 	int argim = getArgs((char *)(o), arsplit, 20);
+
+        parsevec(arsplit, (int *)o, 20);
+        loadnmstr(vec2, arsplit[0], 14);
+        printf("disp loaded <%s>:", arsplit[0]);
+        disp_vec(o, vec2);
+        printf("\n");
+
 	printf("argim=%d;\n---\n", argim);
 	//printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
 	//		arsplit[0], arsplit[1], arsplit[2]);
@@ -356,6 +366,8 @@ void app_main()
 sugim[2] = sug0;
 sugim[3] = (unsigned int *) malloc(sizeof(char *) * 20);
 
+printf("split sugim[0]:%x\n", sugim[0][0]);
+/*
 parsevec(arsplit, (int *)sugim[0], 20);
 printf("split sugim[0]:");
 disp_vec(o, (int *)sugim[0]);
@@ -368,7 +380,7 @@ disp_vec(o, (int *)sugim[0]);
 
     printf("sigim[2]:");
     disp_vec(o, (int *)sigim[2]);
-
+*/
     //timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     //example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
     example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
