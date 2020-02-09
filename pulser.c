@@ -74,9 +74,12 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     //debounce_ticks = xTaskGetTickCount();
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
-
-    sigcur = sigim[pulcode];
-    pulcode = (pulcode +1) % 3;
+    if(sigcur == (unsigned int *)0) {
+        sigcur = sigim[pulcode];
+        pulcode = (pulcode +1) % 3;
+    } else { // sigcur doesnt change
+        pulcode = 0;
+    }
 
     //sigcur = rang1;
 
@@ -342,6 +345,10 @@ void app_main()
 
 	char *o = (char *) malloc(90);
 	strncpy(o, xline, 90);
+    if(o[0] == (char)0) {
+        printf("nothing in xline! exit.\n");
+	return;
+    }
 
 	//esp_err_t err = get_named_str((char *)o, "pm0", 86);
 	//if (err != ESP_OK) printf("Error (%s) get_named_str\n", esp_err_to_name(err));
@@ -350,25 +357,27 @@ void app_main()
 	char **arsplit;
 	arsplit = malloc(sizeof(char *) * 20);
 	int argim = getArgs((char *)(o), arsplit, 20);
-printf("get args(%s):%d 1st<%s>\n", xline, argim, arsplit[0]);
+        printf("get xline(%s):%d name <%s>\n", xline, argim, arsplit[0]);
 
-        //parsevec(arsplit, (int *)o, 20);
         loadnmstr(vec2, arsplit[0], 14);
-        printf("disp loaded <%s>:", arsplit[0]);
+        printf("..._ loaded signal<%s>:", arsplit[0]);
         disp_vec(o, vec2);
-        printf("\n");
+        printf("_...\n");
 
-	printf("argim=%d;\n---\n", argim);
+	sigcur = (unsigned int *)vec2; //! generate single pulse
+
+	//printf("argim=%d;\n---\n", argim);
 	//printf("argim=%d; [0,1,2]=[%s,%s,%s]\n---\n", argim,
 	//		arsplit[0], arsplit[1], arsplit[2]);
 
 	unsigned int *sug0 = malloc(sizeof(char *) * 50);
-	static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0};
+	static unsigned int *sugim[] = {rang5,  rang6, (unsigned int *)0, 0, 0}; //unused
 sugim[2] = sug0;
 sugim[3] = (unsigned int *) malloc(sizeof(char *) * 20);
 
-printf("split sugim[0]:%x\n", sugim[0][0]);
+printf("(unused) sugim[0]:%x\n", sugim[0][0]);
 /*
+
 parsevec(arsplit, (int *)sugim[0], 20);
 printf("split sugim[0]:");
 disp_vec(o, (int *)sugim[0]);
