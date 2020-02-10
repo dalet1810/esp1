@@ -74,14 +74,17 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     //debounce_ticks = xTaskGetTickCount();
     //xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
     timer_get_config(0, 1, &config);
+/*
     if(sigcur == (unsigned int *)0) {
         sigcur = sigim[pulcode];
         pulcode = (pulcode +1) % 3;
     } else { // sigcur doesnt change
         pulcode = 0;
     }
-
-    //sigcur = rang1;
+*/
+    sigim[3] = rang4;
+    pulcode = 0;
+    sigcur = (unsigned int *)xvec; //xline? xvec?
 
     gpio_set_level(BLONK_GPIO, 0);
     if(config.counter_en == TIMER_PAUSE) {
@@ -360,6 +363,7 @@ void app_main()
         printf("get xline(%s):%d name <%s>\n", xline, argim, arsplit[0]);
 
         loadnmstr(vec2, arsplit[0], 14);
+        loadnmstr(xvec, arsplit[0], 14); //global xvec
         printf("..._ loaded signal<%s>:", arsplit[0]);
         disp_vec(o, vec2);
         printf("_...\n");
